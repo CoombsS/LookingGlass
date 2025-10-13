@@ -7,16 +7,13 @@ import faceDetectionAndRecognition as FDR
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 
-# Initialize userName as "Guest"
 if "userName" not in st.session_state:
     st.session_state.userName = "Guest"
 
-# Load API key
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("OpenAI API key is not set in environment variables.")
 
-# PAGE SETUP
 st.set_page_config(layout="wide", page_title="Chatbot Frontend")
 st.title("Chatbot Frontend")
 st.subheader(f"Welcome {st.session_state.userName}!")
@@ -66,48 +63,42 @@ st.markdown("""
             margin-top: 2px;
             display: block;
         }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-    <style>
         .stButton > button {
-            background-color: #4CAF50; /* Green background */
-            color: white; /* White text */
+            background-color: #4CAF50;
+            color: white;
             border: none;
             padding: 10px 20px;
             text-align: center;
-            text-decoration: none;
             display: inline-block;
             font-size: 16px;
             margin: 4px 2px;
             cursor: pointer;
-            border-radius: 8px; /* Rounded corners */
+            border-radius: 8px;
         }
         .stButton > button:hover {
-            background-color: #45a049; /* Darker green on hover */
+            background-color: #45a049;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# Initialize chat history
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Filter out malformed history
 st.session_state.chat_history = [
     entry for entry in st.session_state.chat_history
     if isinstance(entry, tuple) and len(entry) == 3
 ]
 
-# Save chat history to file
+def add_message(sender: str, message: str):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    st.session_state.chat_history.append((sender, message, now))
+
 def saveChat(userName):
     with open(f"chat_history_{userName}.txt", "w") as f:
         for sender, message, timestamp in st.session_state.chat_history:
             f.write(f"{timestamp} - {sender}: {message}\n")
     st.success("Chat history saved!")
 
-# Load chat history from file
 def loadChat(userName):
     filename = f"chat_history_{userName}.txt"
     if os.path.exists(filename):
@@ -128,7 +119,6 @@ def loadChat(userName):
         st.session_state.chat_history = []
         st.info("No previous chat history found.")
 
-# Render chat bubbles
 chat_html = '<div class="chat-container">'
 for sender, message, timestamp in reversed(st.session_state.chat_history):
     if sender == "user":
@@ -146,23 +136,18 @@ for sender, message, timestamp in reversed(st.session_state.chat_history):
 chat_html += '</div>'
 st.markdown(chat_html, unsafe_allow_html=True)
 
-# Input handling
 input_key = "question_input"
 placeholder = st.empty()
 
 def handle_input():
     user_input = st.session_state.get(input_key, "").strip()
     if user_input:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.session_state.chat_history.append(("user", user_input, now))
-
+        add_message("user", user_input)
         with st.spinner("Thinking..."):
             conversation = [
-    {"role": "user" if sender == "user" else "assistant", "content": msg, "timestamp": timestamp}
-    for sender, msg, timestamp in st.session_state.chat_history]
-
-            conversation.append({"role": "user", "content": user_input, "timestamp": timestamp})
-
+                {"role": "user" if s == "user" else "assistant", "content": m}
+                for s, m, _t in st.session_state.chat_history
+            ]
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
@@ -174,18 +159,13 @@ def handle_input():
                     "messages": conversation
                 }
             )
-
             if response.status_code == 200:
                 bot_reply = response.json()["choices"][0]["message"]["content"]
             else:
                 bot_reply = response.json().get("error", {}).get("message", "Failed to get response.")
-
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            st.session_state.chat_history.append(("bot", bot_reply, now))
-
+            add_message("bot", bot_reply)
         st.session_state[input_key] = ""
 
-# Buttons
 clearChat_col, send_col, endChat_col, saveChat_col, detect_col = st.columns([1, 0.3, 0.3, 0.5, 1])
 
 with clearChat_col:
@@ -215,13 +195,12 @@ with detect_col:
         if detectedName:
             st.session_state.userName = detectedName
             loadChat(detectedName)
-            st.session_state.chat_history.append(("bot", f"Welcome back, {detectedName}!"))
+            add_message("bot", f"Welcome back, {detectedName}!")
             st.success(f"User detected: {detectedName}")
         else:
             st.error("No face detected.")
-            st.session_state.chat_history.append(("bot", "No face detected."))
+            add_message("bot", "No face detected.")
 
-# User input field
 user_input = placeholder.text_input(
     "Your message:",
     key=input_key,
