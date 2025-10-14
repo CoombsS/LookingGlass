@@ -1,24 +1,26 @@
-# Deepface
++ Journal
+    - [ ] Recent entries fetched from DB
+    - [ ] Most recent entries
+    - [ ] Search entries
+    - [ ] Fix the tags. Make it a checkbox
 
-+ Features
-    - Detect face
-        - Livestream
-    - Recognize face
-        - If in database, continue
-        - Otherwise, create new entry
++ Chat
+    - [ ] Frontend design
+    - [ ] REST API the python backend
+    - [ ] TTS
+    - [ ] STT
+    - [ ] Database interaction
+    - [ ] Cognitive Behavioral Therapy trained LLM
 
-# Chat functionality
-+ Features
-    - Create new convo history
-    - Remember past conversation history
++ Analytics
+    - [ ] Basic analytics dashboard
+    - [ ] Database interaction
+    - [ ] Recommendation system
 
-# Hardware setup
-+ Features
-    - Microphone
-    - Camera 
-    - Speaker
-    - AI HAT kit 
-    - Raspberry pi
-    - OLED Screen for emotion emulation
-
-LANGSMITH
++ Emotion Detection
+    - [ ] Sentiement analysis from journal entries
+    - [ ] Sentiment analysis chat messages
+    - [ ] Emotion detection from voice: Chat
+    - [ ] Emotion detection from voice: Journal
+    - [ ] Emotion detection from images
+    - [ ] Database interaction
