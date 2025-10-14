@@ -1,15 +1,13 @@
-Required packages:
--opencv(cv2)
--deepface: https://github.com/serengil/deepface
--streamlit
+faceChatbot
 
+By Skyler Coombs
 
-You will also need to use Visual Studio code and download the following extensions: TODO, Github, and draw.io (to see the flow charts, not needed but its cool!)
+Chatbot powered by GPT with face recognition powered by deepface
+Requires an OpenAI API key
+Requires Python 3.10.0
 
 To run:
-Download all the packages you need and set everything up in the same virtual env as deepface for the recognition and deep learning. Then cd into the deepface_env, and run via "streamlit run chatFrontend.py". Wait for the facial detection to finish and chat away!
-
-Desc:
-This branch/version is for the basic face detection, face recognition, and deep learning portion of the larger project which will be a "therapy bot" of sorts.
-
-
+* create python venv in main directory and activate
+* create .env in your venv and place your OpenAI API key inside
+* pip install -r requirements.txt
+* 
