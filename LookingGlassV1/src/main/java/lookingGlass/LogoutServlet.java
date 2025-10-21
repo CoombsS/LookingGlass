@@ -1,6 +1,6 @@
 package lookingGlass;
 
-import jakarta.servlet.http.*;
+import javax.servlet.http.*;
 import java.io.IOException;
 // Logout servlet for later use.
 //Also untested, basically a copy of LoginServlet with relevant changes so could work, most likely not knowing me though

@@ -10,7 +10,7 @@
         class="drawer-toggle"
         aria-controls="appDrawer"
         aria-expanded="false">
-  ☰ Menu
+  Menu
 </button>
 
 <!-- Drawer Panel -->
@@ -22,7 +22,7 @@
   <h3 class="drawer-title">Navigation</h3>
   <nav>
     <ul class="drawer-list">
-      <li><a href="<%=request.getContextPath()%>/chat.jsp">Chat with LookingGlass</a></li>
+      <li><a href="<%=request.getContextPath()%>/chat.jsp">Chat</a></li>
       <li><a href="<%=request.getContextPath()%>/journal.jsp">Journal</a></li>
       <li><a href="<%=request.getContextPath()%>/survey.jsp">Take Survey</a></li>
       <li><a href="<%=request.getContextPath()%>/results.jsp">Results</a></li>

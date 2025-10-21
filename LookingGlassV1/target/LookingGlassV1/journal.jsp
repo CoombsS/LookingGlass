@@ -316,11 +316,9 @@
       if (!form) return;
 
       form.addEventListener('submit', function () {
-        // Ensure time gets sent (in HH:mm:ss)
         const t = document.getElementById('timeInput');
         if (t && !t.value) t.value = nowHMS();
 
-        // Collect #chips into tagsJson (["Work","Personal",...])
         const chips = Array.prototype.map.call(
           document.querySelectorAll('#tags .chip'),
           el => (el.textContent || '').replace(/^#/, '').trim()

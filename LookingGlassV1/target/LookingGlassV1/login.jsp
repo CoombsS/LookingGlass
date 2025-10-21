@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- DISCLAIMER: THIS WAS GOTTEN FROM I THINK W3 SCHOOLS LOGIN TEMPLATES-->
   <meta charset="ISO-8859-1" />
   <title>Login</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -40,7 +41,7 @@
         <h2 id="loginTitle">Sign in</h2>
       </div>
 
-      <% String err = (String) request.getAttribute("loginError"); %>
+      <% String err = (String) request.getAttribute("loginError"); %>   
       <% if (err != null) { %>
         <div class="err"><%= err %></div>
       <% } %>
@@ -86,10 +87,7 @@
       window.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
       window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') closeModal(); });
 
-      /* Do not hide modal on submit; allow navigation per servlet response */
-      /* document.getElementById('loginForm').addEventListener('submit', function(){ modal.style.display='none'; }); */
-
-      /* Auto-open if there was an error from the servlet */
+   
       <% boolean openNow = (request.getAttribute("loginError") != null); %>
       if (<%= openNow ? "true" : "false" %>) {
         openModal();

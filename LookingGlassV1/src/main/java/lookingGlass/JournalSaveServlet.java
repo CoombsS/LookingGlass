@@ -1,7 +1,7 @@
 package lookingGlass;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.*;
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
 import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
@@ -76,7 +76,6 @@ public class JournalSaveServlet extends HttpServlet {
             "INSERT INTO journals " +
             "(`uid`, `title`, `data`, `time`, `whatWentWell`, `whatCouldBeBetter`, `userGivenMood`, `tags`, `entry`, `sentiment`) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, NULL)";
-
         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 

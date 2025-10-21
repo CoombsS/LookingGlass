@@ -1,0 +1,6 @@
+Start:
+& 'C:\xampp\tomcat\bin\startup.bat'
+
+Stop:
+& 'C:\xampp\tomcat\bin\shutdown.bat'
+

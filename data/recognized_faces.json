@@ -1,4 +1,6 @@
 {
     "SkyC": 1,
-    "Ally": 1
+    "Ally": 1,
+    "TestingFailure": 5,
+    "TestingFailur": 1
 }
