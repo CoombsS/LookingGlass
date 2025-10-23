@@ -1,6 +1,21 @@
-Start:
-& 'C:\xampp\tomcat\bin\startup.bat'
+---------------------------------------------
+                Build:
+---------------------------------------------
 
-Stop:
+cd 'C:\Users\user\Desktop\faceChatbot(OLD)\LookingGlassV1'
+
+mvn clean package -DskipTests
+
+---------------------------------------------
+    Tomcat restart + deploy (PowerShell):
+---------------------------------------------
+
 & 'C:\xampp\tomcat\bin\shutdown.bat'
 
+Remove-Item -Recurse -Force 'C:\xampp\tomcat\webapps\LookingGlassV1'
+
+Remove-Item -Force 'C:\xampp\tomcat\webapps\LookingGlassV1.war'
+
+Copy-Item 'C:\Users\user\Desktop\faceChatbot(OLD)\LookingGlassV1\target\LookingGlassV1.war' 'C:\xampp\tomcat\webapps\LookingGlassV1.war'
+
+& 'C:\xampp\tomcat\bin\startup.bat'

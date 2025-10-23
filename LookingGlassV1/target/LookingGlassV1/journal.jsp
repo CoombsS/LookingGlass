@@ -1,4 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="sql" uri="http://java.sun.com/jsp/jstl/sql" %>
+
 <!DOCTYPE html>
 <!--
   AI USAGE DISCLAIMER
@@ -135,27 +139,64 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
-      <h1>Looking Glass</h1>
+      <h1>Looking Glass UPDATED???</h1>
     </div>
 
     <div class="search">
       <input class="input" type="search" placeholder="Search entries, tags..." aria-label="Search" />
     </div>
+    <c:set var="uid" value="${sessionScope.uid}" />
+    <c:if test="${empty uid}">
+      <c:redirect url="${pageContext.request.contextPath}/login.jsp"/>
+    </c:if>
 
-    <div class="list" aria-label="Recent entries">
-      <div class="entry">
-        <h3>Woohoo it works</h3>
-        <div class="meta"><span>Oct 9, 2025</span><span class="tag">#Work</span></div>
-      </div>
-      <div class="entry">
-        <h3>asdg</h3>
-        <div class="meta"><span>Oct 8, 2025</span><span class="tag">#Personal</span></div>
-      </div>
-      <div class="entry">
-        <h3>test2</h3>
-        <div class="meta"><span>Oct 7, 2025</span><span class="tag">#Tech</span></div>
-      </div>
-    </div>
+    <sql:setDataSource var="db"
+        driver="com.mysql.cj.jdbc.Driver"
+        url="jdbc:mysql://localhost:3306/lookingglass?useSSL=false&serverTimezone=UTC"
+        user="root"
+        password="" />
+
+    <sql:query var="recentRows" dataSource="${db}">
+      SELECT journalID, title, entry, tags, data, time
+      FROM journals
+      WHERE uid = ?
+      ORDER BY data DESC, time DESC
+      LIMIT 4
+      <sql:param value="${uid}" />
+    </sql:query>
+
+    <section class="card" aria-labelledby="recent-title">
+  <div class="body">
+    <h2 id="recent-title">Recent Entries</h2>
+
+    <c:choose>
+      <c:when test="${recentRows.rows != null && fn:length(recentRows.rows) > 0}">
+        <div class="grid">
+          <c:forEach var="j" items="${recentRows.rows}">
+            <article class="card journal-card">
+              <h3><c:out value="${j.title}"/></h3>
+              <p class="muted">
+                <c:out value="${fn:length(j.entry) > 120 ? fn:substring(j.entry,0,120).concat('…') : j.entry}"/>
+              </p>
+              <div class="meta" style="margin-top:8px">
+                <span><c:out value="${j.data}"/></span>
+                <c:if test="${not empty j.tags}">
+                  <span class="tag">
+                    #<c:out value="${fn:replace(fn:replace(j.tags,'[',''),']','')}"/>
+                  </span>
+                </c:if>
+              </div>
+            </article>
+          </c:forEach>
+        </div>
+      </c:when>
+      <c:otherwise>
+        <p class="muted">No recent entries yet—write your first one above.</p>
+      </c:otherwise>
+    </c:choose>
+  </div>
+</section>
+
 
     <div class="footer">Click here for dictation</div>
   </aside>
@@ -166,7 +207,7 @@
         action="${pageContext.request.contextPath}/journal/save"
         accept-charset="UTF-8">
 
-    <!-- Hidden fields your servlet expects -->
+    <!-- Hidden fields servlet expects -->
 	<input type="hidden" name="uid" 
 	value="<%= (session.getAttribute("uid") == null) ? "" : session.getAttribute("uid").toString() %>"/>
     <input type="hidden" name="time" id="timeInput"/>

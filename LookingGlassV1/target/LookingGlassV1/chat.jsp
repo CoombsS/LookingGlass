@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <!--
   AI USAGE DISCLAIMER
-  ALL STYLING ON THIS PAGE IS AI-GENERATED TO SPEED UP FRONTEND WORK.
+  MOST STYLING ON THIS PAGE IS AI-GENERATED
 -->
 <html lang="en">
 <head>
@@ -11,7 +11,7 @@
   <title>Looking Glass — Chat</title>
 
   <style>
-    /* ------------------  Base & Theme (mirrors your journal page) ------------------ */
+    /* ------------------  Base & Theme------------------ */
     :root{
       --bg:#070a0d; --panel:#0e1217; --soft:#141922; --muted:#9aa4b2; --text:#e7edf3;
       --accent:#8b5cf6; --accent-2:#06b6d4; --ring:#2b3340; --card:#0a0f14; --border:#202634;
@@ -146,7 +146,7 @@
     </div>
 
     <div class="list" role="list">
-      <!-- Replace with server-rendered conversation list -->
+      <!-- THIS WILL BE REPLACED WITH REAL CHAT HISTORY, CURRENTLY A PLACEHOLDER -->
       <div class="conv" role="listitem" tabindex="0">
         <h3>Therapy check-in</h3>
         <div class="meta"><span>Oct 14, 2025</span><span class="tag">#Wellness</span></div>
@@ -170,7 +170,6 @@
         action="${pageContext.request.contextPath}/chat/send"
         accept-charset="UTF-8">
 
-    <!-- Hidden fields your servlet may expect -->
     <input type="hidden" name="uid" value='<%= (session != null && session.getAttribute("uid") != null) ? session.getAttribute("uid").toString() : "" %>' />
     <input type="hidden" name="chatID" value='<%= (request.getAttribute("chatID") == null) ? "" : request.getAttribute("chatID").toString() %>' />
     <input type="hidden" name="time" id="timeInput"/>
@@ -192,7 +191,7 @@
       <div class="chat-wrap" id="chatScrollRegion" aria-live="polite" aria-relevant="additions">
         <p class="system-note">This conversation is for wellness support. Avoid sharing sensitive personal identifiers.</p>
 
-        <!-- Sample messages (swap with server-rendered loop) -->
+        <!-- PLACEHOLDER MESSAGES -->
         <!-- User -->
         <div class="row user">
           <div class="bubble user" aria-label="You at 9:41 PM">
@@ -285,9 +284,7 @@
         a.remove();
       });
 
-      // Simple demo: hide typing after a while (remove if server pushes real-time)
-      setTimeout(() => { if (typingRow) typingRow.style.display = 'none'; }, 1500);
-    })();
+  
   </script>
 </body>
 </html>

@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <Context>
-
-  <!-- MySQL 8+ Datasource local example -->
-<Resource name="jdbc/LookingGlassDB"
-          auth="Container"
-          type="javax.sql.DataSource"
-          driverClassName="com.mysql.cj.jdbc.Driver"
-          url="jdbc:mysql://localhost:3306/lookingglass?useUnicode=true&amp;charsetEncoding=UTF-8&amp;characterEncoding=UTF-8&amp;serverTimezone=America/Chicago&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
-          username="root"
-          password=""
-          maxTotal="20" maxIdle="10" maxWaitMillis="10000"
-          testOnBorrow="true"
-          validationQuery="SELECT 1"/>
-
+  <Resource name="jdbc/LookingGlassDB"
+            auth="Container"
+            type="javax.sql.DataSource"
+            driverClassName="com.mysql.cj.jdbc.Driver"
+            url="jdbc:mysql://localhost:3306/lookingglass?useUnicode=true&amp;characterEncoding=UTF-8&amp;serverTimezone=America/Chicago&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
+            username="root"
+            password=""
+            maxTotal="20"
+            maxIdle="10"
+            maxWaitMillis="10000"
+            testOnBorrow="true"
+            validationQuery="SELECT 1"/>
 </Context>
