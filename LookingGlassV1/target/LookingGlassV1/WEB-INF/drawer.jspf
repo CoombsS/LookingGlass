@@ -50,9 +50,9 @@
 
   .drawer {
     position: fixed;
-    top: 0; left: 0;
+    top: 64px; left: 0;
     width: 240px;
-    height: 100vh;
+    height: calc(100vh - 64px);
     background: #0e1217;
     color: #e7edf3;
     border-right: 1px solid #202634;
@@ -89,7 +89,7 @@
   body.lg-overlay::before {
     content: "";
     position: fixed;
-    inset: 0;
+    inset: 64px 0 0 0;
     background: rgba(0,0,0,.35);
     z-index: 999;
   }

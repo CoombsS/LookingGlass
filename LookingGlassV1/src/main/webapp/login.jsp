@@ -61,6 +61,10 @@
           <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
           <button type="submit" class="btn btn-primary">Sign in</button>
         </div>
+        <div style="padding:0 20px 20px; text-align:center;">
+          <span style="color:#64748b; font-size:14px;">Don't have an account? </span>
+          <a href="<%= request.getContextPath() %>/register.jsp" style="color:#06b6d4; font-weight:600; text-decoration:none;">Register here</a>
+        </div>
       </form>
     </div>
   </div>

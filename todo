@@ -1,11 +1,11 @@
 + Journal
-    - [ ] Recent entries fetched from DB
-    - [ ] Most recent entries
-    - [ ] Search entries
-    - [ ] Fix the tags. Make it a checkbox
+    - [X] Recent entries fetched from DB
+    - [X] Most recent entries
+    - [X] Search entries
+    - [X] Fix the tags. Make it a checkbox
 
 + Chat
-    - [ ] Frontend design
+    - [X] Frontend design
     - [ ] REST API the python backend
     - [ ] TTS
     - [ ] STT
@@ -24,3 +24,8 @@
     - [ ] Emotion detection from voice: Journal
     - [ ] Emotion detection from images
     - [ ] Database interaction
+
++ Sign Up Page
+    - [X] Frontend design 
+    - [X] Backend integration
+    - [X] Database interaction

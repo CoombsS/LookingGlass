@@ -40,7 +40,7 @@
       grid-area:sidebar; background:linear-gradient(180deg,var(--panel),var(--soft));
       border-right:1px solid var(--border); display:flex; flex-direction:column; min-height:100vh;
     }
-    .brand{padding:20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px}
+  .brand{padding:20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:12px}
     .logo{width:36px; height:36px; border-radius:10px;
       background:conic-gradient(from 210deg,var(--accent),var(--accent-2),var(--accent));
       box-shadow:var(--shadow);
@@ -66,7 +66,7 @@
     /* ------------------  Header ------------------ */
     .header{
       grid-area:header; display:flex; align-items:center; justify-content:space-between;
-      padding:14px 18px; border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:0; z-index:5;
+      padding:14px 18px; border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:0; z-index:1200; min-height:64px;
     }
     .controls{display:flex; gap:10px; align-items:center}
     .btn{appearance:none; border:1px solid var(--ring); background:var(--card); color:var(--text);

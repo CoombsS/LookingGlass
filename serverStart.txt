@@ -2,7 +2,7 @@
                 Build:
 ---------------------------------------------
 
-cd 'C:\Users\user\Desktop\faceChatbot(OLD)\LookingGlassV1'
+cd 'C:\Users\user\Desktop\LookingGlass\LookingGlassV1'
 
 mvn clean package -DskipTests
 
@@ -16,6 +16,6 @@ Remove-Item -Recurse -Force 'C:\xampp\tomcat\webapps\LookingGlassV1'
 
 Remove-Item -Force 'C:\xampp\tomcat\webapps\LookingGlassV1.war'
 
-Copy-Item 'C:\Users\user\Desktop\faceChatbot(OLD)\LookingGlassV1\target\LookingGlassV1.war' 'C:\xampp\tomcat\webapps\LookingGlassV1.war'
+Copy-Item 'C:\Users\user\Desktop\LookingGlass\LookingGlassV1\target\LookingGlassV1.war' 'C:\xampp\tomcat\webapps\LookingGlassV1.war'
 
 & 'C:\xampp\tomcat\bin\startup.bat'

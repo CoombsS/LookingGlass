@@ -1,4 +1,40 @@
-venv
 .env
+
+# Python virtual environments
+.venv/
+venv/
+env/
+deepface_env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Java build outputs
+target/
+*/target/
+*.class
+
+# IDE settings
+.idea/
+*.iml
+
+# VS Code - ignore all, but allow common shared configs
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Existing entries to keep ignored
 scripts
 serverStart.txt
+deploy.ps1
+referenceCode
