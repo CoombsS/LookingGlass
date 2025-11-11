@@ -12,8 +12,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Looking Glass Journal</title>
-
-  <!-- External Stylesheets -->
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/journal.css">
 </head>
@@ -27,14 +25,14 @@
     <c:redirect url="/login.jsp" />
   </c:if>
 
-  <!--  Search vars-->
+  <!--  Searching tags using wildcards (%${q}% = search param ex: tagname, specific word, etc.)-->
   <c:set var="q" value="${fn:trim(param.q)}" />
   <c:set var="qLike" value="%${q}%" />
 
-  <!-- DB -->
+  <!-- DB Connection -->
   <sql:setDataSource var="db" dataSource="jdbc/LookingGlassDB" />
 
-
+<!-- Query for journal entries-->
   <c:choose>
     <c:when test="${not empty q}">
       <sql:query var="listRows" dataSource="${db}">
@@ -64,7 +62,7 @@
     </c:otherwise>
   </c:choose>
 
-  <!-- Right grid: top 4 most recent -->
+  <!-- Right grid: 4 most recent entries -->
   <sql:query var="recentRows" dataSource="${db}">
     SELECT journalID, title, entry, tags, data, time
     FROM journals
@@ -95,7 +93,7 @@
         <c:if test="${not empty q}">
           <p class="muted" style="margin:6px 0 0">Results for "<c:out value='${q}'/>"</p>
         </c:if>
-
+        <!-- Search Results -->
         <c:choose>
           <c:when test="${empty uid}">
             <p class="muted">Please log in to view your entries.</p>
