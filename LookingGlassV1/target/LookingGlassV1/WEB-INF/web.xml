@@ -67,7 +67,7 @@
     </servlet>
     <servlet-mapping>
       <servlet-name>JournalSaveServlet</servlet-name>
-      <url-pattern>/journal/save</url-pattern>
+      <url-pattern>/journalsave</url-pattern>
     </servlet-mapping>
 
     <servlet>

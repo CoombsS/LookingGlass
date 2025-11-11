@@ -1,0 +1,14 @@
+/* ==================== LOOKING GLASS - MASTER STYLESHEET ==================== */
+/* 
+  Master stylesheet that imports all component stylesheets
+  Include this file to get all base styles for the application
+*/
+
+/* Base styles and theme variables */
+@import url('./base.css');
+
+/* Layout components (sidebar, header, main areas) */
+@import url('./layout.css');
+
+/* Reusable UI components (buttons, forms, cards, etc.) */
+@import url('./components.css');

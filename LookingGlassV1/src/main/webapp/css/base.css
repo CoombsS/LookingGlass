@@ -1,0 +1,84 @@
+/* ==================== BASE & THEME ==================== */
+/* 
+  Base variables, reset styles, and color theme
+  Used across all pages of the Looking Glass application
+*/
+
+:root {
+  /* Dark theme colors */
+  --bg: #070a0d;
+  --panel: #0e1217;
+  --soft: #141922;
+  --muted: #9aa4b2;
+  --text: #e7edf3;
+  --accent: #8b5cf6;
+  --accent-2: #06b6d4;
+  --ring: #2b3340;
+  --card: #0a0f14;
+  --border: #202634;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  /* Spacing and sizing */
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-xs: 10px;
+  --gap: 16px;
+  --gap-lg: 22px;
+  --gap-xl: 28px;
+}
+
+/* Light theme override */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7fafc;
+    --panel: #ffffff;
+    --soft: #f3f6fb;
+    --muted: #556071;
+    --text: #0f172a;
+    --accent: #06b6d4;
+    --accent-2: #8b5cf6;
+    --ring: #d2dae6;
+    --card: #ffffff;
+    --border: #e6ecf5;
+    --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  }
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", Helvetica, Arial;
+}
+
+/* Print styles */
+@media print {
+  body {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .sidebar,
+  .header,
+  .composer,
+  .btn {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #cfcfcf !important;
+  }
+}

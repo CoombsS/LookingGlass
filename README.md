@@ -17,6 +17,6 @@ To run: Download all the packages you need and set everything up in the same vir
 ## Roadmap
 - Journaling
 - Mood tracking dashboard
-- New chat interface
+- New chat interface 
 - Face/voice emotion detection
 - TTS and STT

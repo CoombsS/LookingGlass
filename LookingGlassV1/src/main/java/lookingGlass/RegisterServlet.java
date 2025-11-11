@@ -57,9 +57,10 @@ public class RegisterServlet extends HttpServlet {
 
             int newUid = -1;
             try (PreparedStatement ins = con.prepareStatement(
-                    "INSERT INTO users (username, password) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                    "INSERT INTO users (username, password, zip) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
                 ins.setString(1, username);
                 ins.setString(2, password);
+                ins.setString(3, req.getParameter("zip"));
                 int affected = ins.executeUpdate();
                 if (affected == 0) {
                     req.setAttribute("registerError", "Could not create account. Please try again.");
