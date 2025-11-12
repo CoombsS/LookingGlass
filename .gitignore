@@ -1,4 +1,5 @@
 .env
+.gitignore
 
 # Python virtual environments
 .venv/
@@ -20,6 +21,7 @@ target/
 *.iml
 
 # VS Code - ignore all, but allow common shared configs
+.vscode
 .vscode/*
 !.vscode/settings.json
 !.vscode/launch.json

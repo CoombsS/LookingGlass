@@ -36,7 +36,7 @@
   <c:choose>
     <c:when test="${not empty q}">
       <sql:query var="listRows" dataSource="${db}">
-        SELECT journalID, title, entry, tags, data, time
+        SELECT journalID, title, entry, tags, data, time, sentiment
         FROM journals
         WHERE uid = ?
           AND (
@@ -44,7 +44,7 @@
             OR entry LIKE ?
             OR tags  LIKE ?
           )
-        ORDER BY data DESC, time DESC
+        ORDER BY time DESC
         <sql:param value="${uid}" />
         <sql:param value="${qLike}" />
         <sql:param value="${qLike}" />
@@ -53,10 +53,10 @@
     </c:when>
     <c:otherwise>
       <sql:query var="listRows" dataSource="${db}">
-        SELECT journalID, title, entry, tags, data, time
+        SELECT journalID, title, entry, tags, data, time, sentiment
         FROM journals
         WHERE uid = ?
-        ORDER BY data DESC, time DESC
+        ORDER BY time DESC
         <sql:param value="${uid}" />
       </sql:query>
     </c:otherwise>
@@ -64,10 +64,10 @@
 
   <!-- Right grid: 4 most recent entries -->
   <sql:query var="recentRows" dataSource="${db}">
-    SELECT journalID, title, entry, tags, data, time
+    SELECT journalID, title, entry, tags, data, time, sentiment
     FROM journals
     WHERE uid = ?
-    ORDER BY data DESC, time DESC
+    ORDER BY time DESC
     LIMIT 4
     <sql:param value="${uid}" />
   </sql:query>
@@ -108,7 +108,7 @@
                   <a class="entry-link" href="#" onclick="showEntryModal('${j.journalID}', this); return false;"
                      data-title="<c:out value='${j.title}'/>"
                      data-entry="<c:out value='${j.entry}'/>"
-                     data-date="<c:out value='${j.data}'/>"
+                     data-sentiment="<c:out value='${j.sentiment}'/>"
                      data-time="<c:out value='${j.time}'/>"
                      data-tags="<c:out value='${j.tags}'/>">
                     <span class="entry-bullet" aria-hidden="true"></span>
@@ -125,7 +125,7 @@
       </div>
     </section>
 
-    <div class="footer">Click here for dictation</div>
+    <div class="footer">Click here for dictation (not working currently)</div>
   </aside>
 
   <!-- Actual journal -->
@@ -225,6 +225,7 @@
                 </div>
               </section>
 
+              <!-- Left side recent entries -->
               <section class="card" aria-labelledby="recent-main-title">
                 <div class="body">
                   <h2 id="recent-main-title">Recent Entries</h2>
@@ -239,13 +240,31 @@
                              onclick="showEntryModal('${j.journalID}', this); return false;"
                              data-title="<c:out value='${j.title}'/>"
                              data-entry="<c:out value='${j.entry}'/>"
-                             data-date="<c:out value='${j.data}'/>"
+                             data-sentiment="<c:out value='${j.sentiment}'/>"
                              data-time="<c:out value='${j.time}'/>"
                              data-tags="<c:out value='${j.tags}'/>">
                             <h3 class="recent-title"><c:out value="${j.title}"/></h3>
                             <p class="recent-snippet"><c:out value="${fn:substring(j.entry, 0, 160)}"/>...</p>
                             <div class="recent-meta">
-                              <span><c:out value="${j.data}"/></span>
+                              <c:choose>
+                                <c:when test="${j.sentiment != null}">
+                                  <c:set var="score" value="${j.sentiment}" />
+                                  <c:choose>
+                                    <c:when test="${score > 0.6}">
+                                      <span>Positive (<c:out value="${score}"/>)</span>
+                                    </c:when>
+                                    <c:when test="${score < 0.4}">
+                                      <span>Negative (<c:out value="${score}"/>)</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                      <span>Neutral (<c:out value="${score}"/>)</span>
+                                    </c:otherwise>
+                                  </c:choose>
+                                </c:when>
+                                <c:otherwise>
+                                  <span>N/A</span>
+                                </c:otherwise>
+                              </c:choose>
                               <div class="recent-tags" data-tags-container></div>
                             </div>
                           </a>
@@ -297,7 +316,7 @@
       </div>
       <div class="modal-body">
         <div class="modal-meta">
-          <span id="modalDate"></span>
+          <span id="modalSentiment"></span>
           <span id="modalTime"></span>
         </div>
         <div class="modal-tags" id="modalTags"></div>
@@ -307,6 +326,8 @@
   </div>
 
   <!-- Helpers and random stuff-->
+
+  <!-- Formating time -->
   <script>
     (function () {
       function pad(n){ return n<10 ? '0'+n : ''+n; }
@@ -362,12 +383,30 @@
       const modal = document.getElementById('entryModal');
       const title = linkEl.getAttribute('data-title');
       const entry = linkEl.getAttribute('data-entry');
-      const date = linkEl.getAttribute('data-date');
+      const sentiment = linkEl.getAttribute('data-sentiment');
       const time = linkEl.getAttribute('data-time');
       const tags = linkEl.getAttribute('data-tags');
 
       document.getElementById('modalTitle').textContent = title;
-      document.getElementById('modalDate').textContent = date;
+
+      // Formating the sentiment (maybe actual emojis later)
+      const sentimentEl = document.getElementById('modalSentiment');
+      if (sentiment && sentiment !== 'null' && sentiment !== '') {
+        const score = parseFloat(sentiment);
+        let label = 'Neutral';
+        let emoji = '-_-';
+        if (score > 0.6) {
+          label = 'Positive';
+          emoji = ':)';
+        } else if (score < 0.4) {
+          label = 'Negative';
+          emoji = ':(';
+        }
+        sentimentEl.textContent = emoji + ' Sentiment: ' + label + ' (' + score.toFixed(2) + ')';
+      } else {
+        sentimentEl.textContent = 'Sentiment: Analyzing...';
+      }
+      
       document.getElementById('modalTime').textContent = time;
       document.getElementById('modalEntry').textContent = entry;
 

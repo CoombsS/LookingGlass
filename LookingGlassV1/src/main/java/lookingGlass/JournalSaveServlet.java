@@ -1,5 +1,4 @@
 package lookingGlass;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
 import java.io.IOException;
@@ -7,10 +6,14 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.OutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 
 public class JournalSaveServlet extends HttpServlet {
-    private static final String ENC = "UTF-8";
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
@@ -20,10 +23,9 @@ public class JournalSaveServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
-
         System.out.println("JournalSaveServlet - RequestURI: " + req.getRequestURI() + " ContextPath: " + req.getContextPath());
 
-        // Getting user
+        // Get user ID
         String uidParam = nvl(req.getParameter("uid"));
         if (uidParam.isEmpty()) throw new ServletException("Missing uid.");
         final int uid;
@@ -85,33 +87,48 @@ public class JournalSaveServlet extends HttpServlet {
                 : LocalTime.parse(timeStr);
         LocalDateTime ldt = LocalDateTime.of(ld, lt);
 
-        // Sending to DB 
+        // Sends to DB then the sentiment api
         final String sql =
             "INSERT INTO journals " +
             "(`uid`, `title`, `data`, `time`, `whatWentWell`, `whatCouldBeBetter`, `userGivenMood`, `tags`, `entry`, `sentiment`) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, NULL)";
+        int insertedId = -1;
         try (Connection c = Db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            //prepared statements to avoid sql injection
             int i = 1;
-            ps.setInt(i++, uid);                                
-            ps.setString(i++, title);                          
-            ps.setString(i++, dataBody);                        
-            ps.setTimestamp(i++, Timestamp.valueOf(ldt));       
-            ps.setString(i++, w1);                             
-            ps.setString(i++, w2);                             
-            if (moodDb == null) {                              
+            ps.setInt(i++, uid);
+            ps.setString(i++, title);
+            ps.setString(i++, dataBody);
+            ps.setTimestamp(i++, Timestamp.valueOf(ldt));
+            ps.setString(i++, w1);
+            ps.setString(i++, w2);
+            if (moodDb == null) {
                 ps.setNull(i++, Types.VARCHAR);
             } else {
                 ps.setString(i++, moodDb);
             }
-            ps.setString(i++, tagsJson);                       
-            ps.setString(i++, entry);                          
+            ps.setString(i++, tagsJson);
+            ps.setString(i++, entry);
 
             ps.executeUpdate();
 
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs != null && rs.next()) {
+                    insertedId = rs.getInt(1);
+                }
+            }
+
         } catch (SQLException e) {
             throw new ServletException("Failed to save journal: " + e.getMessage(), e);
+        }
+
+        // uid and journal id passed to sentiment api
+        //try/catch to make sure something happened and if not it wont get hung up
+        try {
+            callSentimentService(uid, insertedId);
+        } catch (Exception ex) {
+            System.err.println("Warning: failed to call sentiment service: " + ex.getMessage());
         }
 
         // If we reach here, success and redirect back to journal
@@ -164,4 +181,40 @@ public class JournalSaveServlet extends HttpServlet {
         resp.sendRedirect(target);
     }
     private static String nvl(String s) { return (s == null) ? "" : s.trim(); }
+
+    // Sentiment api called
+    private void callSentimentService(int uid, int journalId) {
+        try {
+            URL url = new URL("http://127.0.0.1:5000/sentiment");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            con.setDoOutput(true);
+            con.setConnectTimeout(3000); //chat recommended this, and it seems good so its here
+            con.setReadTimeout(3000);
+
+            // formating and transmitting 
+            String payload = String.format("{\"uid\":%d,\"journalId\":%d}", uid, journalId);
+            byte[] out = payload.getBytes(StandardCharsets.UTF_8);
+            con.setFixedLengthStreamingMode(out.length);
+            try (OutputStream os = con.getOutputStream()) {
+                os.write(out);
+            }
+
+            // response handling (again, chat recommended this and i dont think it hurts. Discards the body of the response b/c not needed)
+            int code = con.getResponseCode();
+            if (code < 200 || code >= 300) {
+                System.err.println("callSentimentService returned HTTP code: " + code);
+            }
+            try (InputStream is = (code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream()) {
+                if (is != null) {
+                    byte[] buf = new byte[256];
+                    while (is.read(buf) > 0) { /* discard */ }
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("callSentimentService error: " + e.getMessage());
+        }
+    }
 }
