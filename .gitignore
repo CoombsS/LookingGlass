@@ -1,5 +1,4 @@
 .env
-.gitignore
 
 # Python virtual environments
 .venv/
@@ -40,3 +39,8 @@ scripts
 serverStart.txt
 deploy.ps1
 referenceCode
+
+start_sentiment.ps1
+run.ps1
+tests
+restapi/api/tests/
