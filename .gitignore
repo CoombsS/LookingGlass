@@ -1,3 +1,4 @@
+# Environment variables
 .env
 
 # Python virtual environments
@@ -9,19 +10,26 @@ deepface_env/
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
 # Java build outputs
 target/
 */target/
 *.class
+*.war
+*.jar
+
+# Maven
+.mvn/
 
 # IDE settings
 .idea/
 *.iml
+*.swp
+*.swo
 
 # VS Code - ignore all, but allow common shared configs
-.vscode
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/launch.json
 !.vscode/tasks.json
@@ -30,17 +38,33 @@ target/
 # Logs
 *.log
 
-# OS junk
+# OS files
 .DS_Store
 Thumbs.db
 
-# Existing entries to keep ignored
-scripts
-serverStart.txt
-deploy.ps1
-referenceCode
+# Personal data (chat histories, recognized faces)
+data/chat_history*.txt
+data/recognized_faces.json
+data/learned_faces/
+learned_faces/
+temp_faces/
 
+# Development scripts (keep SQL files tracked)
+scripts/deploy.ps1
+scripts/redeploy.ps1
+scripts/serverStart.txt
+
+# Reference/old code
+referenceCode/
+
+# Temporary PowerShell scripts
 start_sentiment.ps1
+start_chat_service.ps1
+start_all_services.ps1
 run.ps1
-tests
-restapi/api/tests/
+restapi/start_*.ps1
+restapi/run.ps1
+
+# Node (if added later)
+node_modules/
+package-lock.json
