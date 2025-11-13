@@ -426,6 +426,7 @@
       });
 
       // Display key phrases (data field)
+      //DISCLAIMER: CHATGPT GENERATED THIS SECTION (keyPhrases DISPLAY)
       const keyPhrasesContainer = document.getElementById('modalKeyPhrases');
       keyPhrasesContainer.innerHTML = '';
       if (keyPhrases && keyPhrases !== 'null' && keyPhrases !== '') {

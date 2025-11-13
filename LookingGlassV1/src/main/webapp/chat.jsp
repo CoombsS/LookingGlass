@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <!--
   AI USAGE DISCLAIMER
-  MOST STYLING ON THIS PAGE IS AI-GENERATED
+  MOST (TBH ALL) STYLING ON THIS PAGE IS AI-GENERATED
 -->
 <html lang="en">
 <head>
@@ -29,72 +29,33 @@
       <input class="input" type="search" placeholder="Search chats..." aria-label="Search conversations" />
     </div>
 
-    <div class="list" role="list">
-      <!-- THIS WILL BE REPLACED WITH REAL CHAT HISTORY, CURRENTLY A PLACEHOLDER -->
-      <div class="conv" role="listitem" tabindex="0">
-        <h3>Therapy check-in</h3>
-        <div class="meta"><span>Oct 14, 2025</span><span class="tag">#Wellness</span></div>
-      </div>
-      <div class="conv" role="listitem" tabindex="0">
-        <h3>Project scoping with AI</h3>
-        <div class="meta"><span>Oct 13, 2025</span><span class="tag">#Work</span></div>
-      </div>
-      <div class="conv" role="listitem" tabindex="0">
-        <h3>Gratitude sprint</h3>
-        <div class="meta"><span>Oct 12, 2025</span><span class="tag">#Gratitude</span></div>
-      </div>
+    <div class="list" role="list" id="chatSessionsList">
+      <p class="muted" style="padding: 12px;">Loading conversations...</p>
     </div>
 
-    <div class="footer">Click here for dictation</div>
+    <div class="footer">Click here for resources</div>
   </aside>
 
-  <!-- Chat Form wraps header + main + composer -->
-  <form id="chatForm"
-        method="post"
-        action="${pageContext.request.contextPath}/chat/send"
-        accept-charset="UTF-8">
+  <input type="hidden" id="uid" value='<%= (session != null && session.getAttribute("uid") != null) ? session.getAttribute("uid").toString() : "" %>' />
+  <input type="hidden" id="currentChatID" value="" />
 
-    <input type="hidden" name="uid" value='<%= (session != null && session.getAttribute("uid") != null) ? session.getAttribute("uid").toString() : "" %>' />
-    <input type="hidden" name="chatID" value='<%= (request.getAttribute("chatID") == null) ? "" : request.getAttribute("chatID").toString() %>' />
-    <input type="hidden" name="time" id="timeInput"/>
-
-    <!-- Header -->
-    <header class="header" aria-label="Chat header">
+  <!-- Header -->
+  <header class="header" aria-label="Chat header">
       <div class="controls">
         <span class="muted">Private chat</span>
       </div>
       <div class="controls">
-        <button class="btn" type="button" id="newChatBtn">New Chat</button>
-        <button class="btn" type="button" id="exportBtn">Export</button>
-        <button class="btn primary" type="submit">End Chat</button>
+        <button class="btn" type="button" id="clearChatBtn">New Chat</button>
+        <button class="btn primary" type="button" id="saveBtn">Save</button>
       </div>
     </header>
 
     <!-- Main Chat -->
     <main>
       <div class="chat-wrap" id="chatScrollRegion" aria-live="polite" aria-relevant="additions">
-        <p class="system-note">This conversation is for wellness support. Avoid sharing sensitive personal identifiers.</p>
+        <p class="system-note">This conversation is for mental wellness support. Please avoid sharing identifying information.</p>
 
-        <!-- PLACEHOLDER MESSAGES -->
-        <!-- User -->
-        <div class="row user">
-          <div class="bubble user" aria-label="You at 9:41 PM">
-            <div class="t">Hey, can we talk through some stress I'm having about deadlines?</div>
-            <div class="ts">9:41 PM</div>
-          </div>
-          <div class="avatar">U</div>
-        </div>
-
-        <!-- Assistant -->
-        <div class="row assistant">
-          <div class="avatar bot">LG</div>
-          <div class="bubble" aria-label="Assistant at 9:41 PM">
-            <div class="t">Absolutely. Want to start with the one that feels heaviest right now?</div>
-            <div class="ts">9:41 PM</div>
-          </div>
-        </div>
-
-        <!-- Typing indicator (toggle via JS while awaiting response) -->
+        <!-- Typing indicator -->
         <div class="row assistant" id="typingRow" style="display:none">
           <div class="avatar bot">LG</div>
           <div class="bubble" aria-label="Assistant is typing">
@@ -104,71 +65,289 @@
       </div>
     </main>
 
-    <!-- Composer -->
+    <!-- Input box (chat helped with styling of course) -->
     <section class="composer" aria-label="Message composer">
       <div class="compose-wrap">
         <div class="bar">
-          <textarea id="message" name="message" class="ta" placeholder="Type a message... (Shift+Enter for newline)" aria-label="Message"></textarea>
-          <button class="btn primary" id="sendBtn" type="submit" name="action" value="send">Send</button>
+          <textarea id="message" class="ta" placeholder="Type a message... (Shift+Enter for newline)" aria-label="Message"></textarea>
+          <button class="btn primary" id="sendBtn" type="button">Send</button>
         </div>
-        <div class="hint">Press Enter to send • Shift+Enter for newline</div>
+        <div class="hint">Press Enter to send</div>
       </div>
     </section>
-  </form>
 
-  <!-- Behavior -->
+  <!-- connection to apis, and var declaration -->
   <script>
     (function(){
-      function pad(n){ return n<10 ? '0'+n : ''+n; }
-      function nowHMS(){
-        const d = new Date();
-        return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-      }
-
-      const chatForm = document.getElementById('chatForm');
+      const API_BASE = 'http://127.0.0.1:5001';
       const messageEl = document.getElementById('message');
-      const timeInput = document.getElementById('timeInput');
       const scrollRegion = document.getElementById('chatScrollRegion');
       const typingRow = document.getElementById('typingRow');
+      const sendBtn = document.getElementById('sendBtn');
+      const uidInput = document.getElementById('uid');
+      const currentChatIDInput = document.getElementById('currentChatID');
+      const chatSessionsList = document.getElementById('chatSessionsList');
+      // Date/time formatting (chat helped with this as well)
+      function pad(n){ return n<10 ? '0'+n : ''+n; }
+      function formatTime(dateStr){
+        const d = dateStr ? new Date(dateStr) : new Date();
+        let h = d.getHours();
+        const m = pad(d.getMinutes());
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return h + ':' + m + ' ' + ampm;
+      }
 
+      function formatDate(dateStr){
+        const d = new Date(dateStr);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+      }
+
+      //Scroll chat automatically to bottom/most recent messages
       function scrollToBottom(){
         if (!scrollRegion) return;
-        scrollRegion.scrollTop = scrollRegion.scrollHeight + 9999;
+        setTimeout(() => {
+          scrollRegion.scrollTop = scrollRegion.scrollHeight + 9999;
+        }, 50);
       }
-      scrollToBottom();
+
+      // Sending message/displaying in bubbles
+      function addMessage(role, content, timestamp){
+        const isUser = role === 'user';
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row ' + (isUser ? 'user' : 'assistant');
+        
+        const timeStr = formatTime(timestamp);
+        const bubbleHTML = `
+          <div class="bubble \${isUser ? 'user' : ''}" aria-label="\${isUser ? 'You' : 'Assistant'} at \${timeStr}">
+            <div class="t">\${escapeHtml(content)}</div>
+            <div class="ts">\${timeStr}</div>
+          </div>
+        `;
+        // Avatar and typing showing when ai is responding (maybe make an actual png/use logo instead of 'LG') 
+        if (isUser) {
+          rowDiv.innerHTML = bubbleHTML + '<div class="avatar">U</div>';
+        } else {
+          rowDiv.innerHTML = '<div class="avatar bot">LG</div>' + bubbleHTML;
+        }
+        scrollRegion.insertBefore(rowDiv, typingRow);
+        scrollToBottom();
+      }
+
+      function escapeHtml(text){
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+      //disclaimer, AI helped me with all the loading past chat history and sessions bc i could not figure that out and make it look good.
+      function loadChatHistory(){
+        const uid = uidInput.value;
+        if (!uid) return; //if no user logged in exit, cause why you here??
+        // ask api for chat history
+        fetch(API_BASE + '/chat/history/' + uid)  //ask api for history
+          .then(res => res.json())  //when successful, parse it
+          .then(data => {           //then if successful and a message is there, display it
+            if (data.success && data.messages) {
+              const messages = scrollRegion.querySelectorAll('.row:not(#typingRow)');
+              messages.forEach(m => {
+                if (!m.querySelector('.system-note')) m.remove();
+              });
+              // Add messages
+              data.messages.forEach(msg => {
+                addMessage(msg.role, msg.content, msg.timestamp);
+              });
+            }
+          })
+          .catch(err => console.error('Error loading chat history:', err));
+      }
+
+      function loadChatSessions(){
+        const uid = uidInput.value;
+        if (!uid) return; //if no user logged in exit, cause why you here??
+        fetch(API_BASE + '/chat/sessions/' + uid)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.sessions) {
+              if (data.sessions.length === 0) {
+                chatSessionsList.innerHTML = '<p class="muted" style="padding: 12px;">No conversations yet. Start chatting!</p>';
+                return;
+              }
+              chatSessionsList.innerHTML = '';
+              data.sessions.forEach(session => {
+                const convDiv = document.createElement('div');
+                convDiv.className = 'conv';
+                convDiv.role = 'listitem';
+                convDiv.tabIndex = 0;
+                convDiv.dataset.chatId = session.chatID;
+                const title = session.title || 'New Chat';
+                const date = formatDate(session.updated_at);
+                const msgCount = session.message_count || 0;
+                convDiv.innerHTML = `
+                  <h3>\${escapeHtml(title)}</h3>
+                  <div class="meta"><span>\${date}</span><span class="tag">\${msgCount} messages</span></div>
+                `;
+                convDiv.addEventListener('click', () => loadSpecificChat(session.chatID));
+                chatSessionsList.appendChild(convDiv);
+              });
+            }
+          })
+          .catch(err => console.error('Error loading chat sessions:', err));
+      }
+
+      function loadSpecificChat(chatId){
+        fetch(API_BASE + '/chat/session/' + chatId)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.messages) {
+              // Update current chat ID
+              currentChatIDInput.value = chatId;
+              
+              // Clear existing messages
+              const messages = scrollRegion.querySelectorAll('.row:not(#typingRow)');
+              messages.forEach(m => {
+                if (!m.querySelector('.system-note')) m.remove();
+              });
+              
+              // Add messages
+              data.messages.forEach(msg => {
+                addMessage(msg.role, msg.content, msg.timestamp);
+              });
+            }
+          })
+          .catch(err => console.error('Error loading specific chat:', err));
+      }
+
+      async function sendMessage(){
+        const message = messageEl.value.trim();
+        const uid = uidInput.value;
+        if (!message || !uid) return;
+        // Disable send button
+        sendBtn.disabled = true;
+        messageEl.disabled = true;
+        // Show typing indicator
+        typingRow.style.display = 'flex';
+        scrollToBottom();
+        try {
+          const response = await fetch(API_BASE + '/chat/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({uid: parseInt(uid), message: message})
+          });
+          const data = await response.json();
+          if (data.success) {
+            // Update current chat ID if this is a new chat
+            if (data.chatID && !currentChatIDInput.value) {
+              currentChatIDInput.value = data.chatID;
+            }
+            
+            // Add user message
+            addMessage('user', data.userMessage.content, data.userMessage.timestamp);
+            
+            // Add AI response
+            addMessage('assistant', data.aiMessage.content, data.aiMessage.timestamp);
+            
+            // Clear input
+            messageEl.value = '';
+            
+            // Reload sidebar to show updated conversation
+            loadChatSessions();
+          } else {
+            alert('Error: ' + (data.error || 'Failed to send message'));
+          }
+        } catch (err) {
+          console.error('Error sending message:', err);
+          alert('Failed to send message. Make sure the chat service is running on port 5001.');
+        } finally {
+          // Hide typing indicator
+          typingRow.style.display = 'none';
+          
+          // Re-enable inputs
+          sendBtn.disabled = false;
+          messageEl.disabled = false;
+          messageEl.focus();
+        }
+      }
 
       // Enter to send, Shift+Enter for newline
       messageEl.addEventListener('keydown', function(e){
         if (e.key === 'Enter' && !e.shiftKey){
           e.preventDefault();
-          document.getElementById('sendBtn').click();
+          sendMessage();
         }
       });
 
-      chatForm.addEventListener('submit', function(){
-        if (timeInput && !timeInput.value) timeInput.value = nowHMS();
-        // optional visual typing while server responds
-        if (typingRow) typingRow.style.display = 'flex';
+      // Send button
+      sendBtn.addEventListener('click', sendMessage);
+
+      // New Chat button
+      document.getElementById('clearChatBtn').addEventListener('click', async function(){
+        const uid = uidInput.value;
+        if (!uid) return;
+        
+        if (!confirm('Start a new chat? Current conversation will be saved.')) return;
+        
+        try {
+          const response = await fetch(API_BASE + '/chat/clear/' + uid, {
+            method: 'POST'
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            // Clear messages from UI
+            const messages = scrollRegion.querySelectorAll('.row:not(#typingRow)');
+            messages.forEach(m => {
+              if (!m.querySelector('.system-note')) m.remove();
+            });
+            
+            // Clear current chat ID
+            currentChatIDInput.value = '';
+            
+            // Reload sidebar
+            loadChatSessions();
+          }
+        } catch (err) {
+          console.error('Error creating new chat:', err);
+          alert('Failed to create new chat.');
+        }
       });
 
-      // New Chat button: navigate to a fresh chat (adjust path as needed)
-      document.getElementById('newChatBtn').addEventListener('click', function(){
-        window.location.href = '${pageContext.request.contextPath}/chat/new';
+      // Save button
+      document.getElementById('saveBtn').addEventListener('click', async function(){
+        const chatId = currentChatIDInput.value;
+        if (!chatId) {
+          alert('No active chat to save. Send a message first.');
+          return;
+        }
+        
+        const title = prompt('Enter a title for this conversation:');
+        if (!title || !title.trim()) return;
+        
+        try {
+          const response = await fetch(API_BASE + '/chat/save/' + chatId, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title: title.trim()})
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            alert('Chat saved successfully!');
+            loadChatSessions(); // Reload sidebar to show updated title
+          } else {
+            alert('Error: ' + (data.error || 'Failed to save chat'));
+          }
+        } catch (err) {
+          console.error('Error saving chat:', err);
+          alert('Failed to save chat.');
+        }
       });
 
-      // Export button: simple client-side export of visible chat (adjust to server export if you prefer)
-      document.getElementById('exportBtn').addEventListener('click', function(){
-        const msgs = Array.from(document.querySelectorAll('.bubble .t')).map(n => n.textContent.trim());
-        const blob = new Blob([msgs.join('\n\n')], {type:'text/plain;charset=utf-8'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'chat-export.txt';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      });
-
-  
+      // Load chat history and sessions on page load
+      loadChatHistory();
+      loadChatSessions();
+      scrollToBottom();
+    })();
   </script>
 </body>
 </html>

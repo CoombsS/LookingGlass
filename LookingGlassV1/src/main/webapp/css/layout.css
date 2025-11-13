@@ -76,11 +76,10 @@ main {
 
 /* Chat-specific main area - push content to bottom */
 .grid-chat main {
+  padding: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  height: calc(100vh - 64px - 120px); /* subtract header and composer heights */
-  overflow: hidden;
 }
 
 /* Grid layouts for different page types */
@@ -96,10 +95,11 @@ main {
 .grid-chat {
   display: grid;
   grid-template-columns: 320px 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "sidebar header"
-    "sidebar main";
+    "sidebar main"
+    "sidebar composer";
   height: 100vh;
 }
 
@@ -125,6 +125,10 @@ main {
 
 .grid-chat main {
   grid-area: main;
+}
+
+.grid-chat .composer {
+  grid-area: composer;
 }
 
 /* Responsive design */

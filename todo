@@ -4,13 +4,15 @@
     - [X] Search entries
     - [X] Fix the tags. Make it a checkbox
     - [X] Fix Gratitudes being saved wrong
+    - [ ] TTS
+    - [ ] STT
 
 + Chat
     - [X] Frontend design
-    - [ ] REST API the python backend
+    - [/] REST API the python backend
     - [ ] TTS
     - [ ] STT
-    - [ ] Database interaction
+    - [X] Database interaction
     - [ ] Cognitive Behavioral Therapy trained LLM
 
 + Analytics
@@ -19,14 +21,14 @@
     - [ ] Recommendation system
 
 + Emotion Detection
-    - [ ] Sentiement analysis from journal entries
+    - [X] Sentiement analysis from journal entries
     - [ ] Sentiment analysis chat messages
     - [ ] Emotion detection from voice: Chat
     - [ ] Emotion detection from voice: Journal
     - [ ] Emotion detection from images
-    - [ ] Database interaction
 
 + Sign Up Page
     - [X] Frontend design 
     - [X] Backend integration
     - [X] Database interaction
+    - [ ] Face detection 2 factor authentication

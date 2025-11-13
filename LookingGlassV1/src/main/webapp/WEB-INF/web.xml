@@ -71,16 +71,6 @@
     </servlet-mapping>
 
     <servlet>
-      <servlet-name>ChatSaveServlet</servlet-name>
-      <servlet-class>lookingGlass.ChatSaveServlet</servlet-class>
-      <load-on-startup>3</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-      <servlet-name>ChatSaveServlet</servlet-name>
-      <url-pattern>/chat/save</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
       <servlet-name>LogoutServlet</servlet-name>
       <servlet-class>lookingGlass.LogoutServlet</servlet-class>
       <load-on-startup>4</load-on-startup>

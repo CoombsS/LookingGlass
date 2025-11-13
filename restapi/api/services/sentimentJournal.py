@@ -47,7 +47,7 @@ def analyze_sentiment(entry_text: str):
     if not client:
         raise ValueError("There is no OpenAI client, please set the OPENAI_API_KEY environment variable.")
     
-    #key phrases will be sent to 'data' field. Currently is just a duplicate of entry.
+    #key phrases will be sent to 'data' field. 
     prompt = f"Analyze this journal entry for sentiment and return JSON with fields: sentiment (positive/negative/neutral), score (0-1), and key_phrases (list). Entry: {entry_text}"
     resp = client.chat.completions.create(
         model=OPENAI_MODEL,
