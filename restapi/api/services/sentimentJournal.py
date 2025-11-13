@@ -94,19 +94,23 @@ def analyze_sentiment_only():
         # analyze 
         try:
             sentiment_result = analyze_sentiment(entry)
-            # Extract score from sentiment result for database (make more accurate later)
+            # Extract score and key phrases from sentiment result
             sentiment_score = sentiment_result.get("score", 0.5)
+            key_phrases = sentiment_result.get("key_phrases", [])
+            # Convert key phrases list to JSON string for data field
+            key_phrases_json = json.dumps(key_phrases) if key_phrases else None
         except Exception as e:
             logging.exception("analyze_sentiment failed for journalId=%s", journal_id)
             return jsonify({"error": f"analysis failed: {str(e)}"}), 500
 
-        update_sql = f"UPDATE journals SET sentiment=%s WHERE journalID=%s"
-        cursor.execute(update_sql, (sentiment_score, journal_id))
+        # Update both sentiment score and data (key phrases)
+        update_sql = f"UPDATE journals SET sentiment=%s, data=%s WHERE journalID=%s"
+        cursor.execute(update_sql, (sentiment_score, key_phrases_json, journal_id))
         conn.commit()
         cursor.close()
         conn.close()
-        logging.info("Updated sentiment for journalId=%s with score=%s", journal_id, sentiment_score)
-        return jsonify({"journalId": journal_id, "sentiment": sentiment_result, "score": sentiment_score}), 200
+        logging.info("Updated sentiment for journalId=%s with score=%s and key_phrases", journal_id, sentiment_score)
+        return jsonify({"journalId": journal_id, "sentiment": sentiment_result, "score": sentiment_score, "key_phrases": key_phrases}), 200
 
     except Error as e:
         logging.exception("DB error in /sentiment endpoint")

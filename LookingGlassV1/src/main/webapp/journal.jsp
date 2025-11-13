@@ -110,7 +110,8 @@
                      data-entry="<c:out value='${j.entry}'/>"
                      data-sentiment="<c:out value='${j.sentiment}'/>"
                      data-time="<c:out value='${j.time}'/>"
-                     data-tags="<c:out value='${j.tags}'/>">
+                     data-tags="<c:out value='${j.tags}'/>"
+                     data-keyphrases="<c:out value='${j.data}'/>">
                     <span class="entry-bullet" aria-hidden="true"></span>
                     <span class="entry-title"><c:out value="${j.title}"/></span>
                   </a>
@@ -242,7 +243,8 @@
                              data-entry="<c:out value='${j.entry}'/>"
                              data-sentiment="<c:out value='${j.sentiment}'/>"
                              data-time="<c:out value='${j.time}'/>"
-                             data-tags="<c:out value='${j.tags}'/>">
+                             data-tags="<c:out value='${j.tags}'/>"
+                             data-keyphrases="<c:out value='${j.data}'/>">
                             <h3 class="recent-title"><c:out value="${j.title}"/></h3>
                             <p class="recent-snippet"><c:out value="${fn:substring(j.entry, 0, 160)}"/>...</p>
                             <div class="recent-meta">
@@ -321,6 +323,7 @@
         </div>
         <div class="modal-tags" id="modalTags"></div>
         <div class="modal-entry" id="modalEntry"></div>
+        <div class="modal-keyphrases" id="modalKeyPhrases" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;"></div>
       </div>
     </div>
   </div>
@@ -386,6 +389,7 @@
       const sentiment = linkEl.getAttribute('data-sentiment');
       const time = linkEl.getAttribute('data-time');
       const tags = linkEl.getAttribute('data-tags');
+      const keyPhrases = linkEl.getAttribute('data-keyphrases');
 
       document.getElementById('modalTitle').textContent = title;
 
@@ -420,6 +424,40 @@
         tagEl.textContent = '#' + tag;
         tagsContainer.appendChild(tagEl);
       });
+
+      // Display key phrases (data field)
+      //DISCLAIMER: CHATGPT GENERATED THIS SECTION (keyPhrases DISPLAY)
+      const keyPhrasesContainer = document.getElementById('modalKeyPhrases');
+      keyPhrasesContainer.innerHTML = '';
+      if (keyPhrases && keyPhrases !== 'null' && keyPhrases !== '') {
+        try {
+          const phrases = JSON.parse(keyPhrases);
+          if (Array.isArray(phrases) && phrases.length > 0) {
+            const heading = document.createElement('h3');
+            heading.textContent = 'Key Phrases';
+            heading.style.marginBottom = '8px';
+            heading.style.fontSize = '14px';
+            heading.style.fontWeight = 'bold';
+            keyPhrasesContainer.appendChild(heading);
+            
+            const list = document.createElement('ul');
+            list.style.listStyle = 'disc';
+            list.style.paddingLeft = '20px';
+            phrases.forEach(function(phrase) {
+              const li = document.createElement('li');
+              li.textContent = phrase;
+              li.style.marginBottom = '4px';
+              list.appendChild(li);
+            });
+            keyPhrasesContainer.appendChild(list);
+          }
+        } catch (e) {
+          // If not JSON, display as plain text
+          const p = document.createElement('p');
+          p.textContent = 'Key Phrases: ' + keyPhrases;
+          keyPhrasesContainer.appendChild(p);
+        }
+      }
 
       modal.classList.add('active');
     }

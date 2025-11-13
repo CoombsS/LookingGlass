@@ -77,7 +77,7 @@ public class JournalSaveServlet extends HttpServlet {
 
         // Normalizing 
         if (title.isEmpty()) title = "(untitled)";
-        final String dataBody = entry.isEmpty() ? "(no content)" : entry;
+        // Leave data NULL initially - sentiment service will populate with key phrases
 
         // Date+Time parsing
         LocalDate ld = dateStr.isEmpty() ? LocalDate.now() : LocalDate.parse(dateStr);
@@ -91,7 +91,7 @@ public class JournalSaveServlet extends HttpServlet {
         final String sql =
             "INSERT INTO journals " +
             "(`uid`, `title`, `data`, `time`, `whatWentWell`, `whatCouldBeBetter`, `userGivenMood`, `tags`, `entry`, `sentiment`) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, NULL)";
+            "VALUES (?, ?, NULL, ?, ?, ?, ?, CAST(? AS JSON), ?, NULL)";
         int insertedId = -1;
         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -99,7 +99,7 @@ public class JournalSaveServlet extends HttpServlet {
             int i = 1;
             ps.setInt(i++, uid);
             ps.setString(i++, title);
-            ps.setString(i++, dataBody);
+            // Skip data field - left as NULL for sentiment service to populate
             ps.setTimestamp(i++, Timestamp.valueOf(ldt));
             ps.setString(i++, w1);
             ps.setString(i++, w2);
