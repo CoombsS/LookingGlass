@@ -1,0 +1,7 @@
+lookingGlass\ChatSaveServlet.class
+lookingGlass\JournalSaveServlet.class
+lookingGlass\Auth.class
+lookingGlass\Db.class
+lookingGlass\LoginServlet.class
+lookingGlass\RegisterServlet.class
+lookingGlass\LogoutServlet.class

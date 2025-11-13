@@ -1,0 +1,25 @@
+<%@ page import="java.time.*, java.time.format.DateTimeFormatter" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<meta charset="UTF-8" />
+
+<%!
+  private static final DateTimeFormatter TS_FMT =
+      DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a");
+  private String nowFmt() {
+    return LocalDateTime.now().format(TS_FMT);
+  }
+%>
+
+<div style="position:absolute; top:10px; right:20px; font-weight:600; text-align:right;">
+  <%
+    String username = (String) session.getAttribute("username");
+    if (username != null && !username.isEmpty()) {
+  %>
+    Welcome, <%= username %><br/>
+    <span style="font-weight:400; font-size:0.9;">
+      <%= nowFmt() %>
+    </span>
+  <%
+    }
+  %>
+</div>

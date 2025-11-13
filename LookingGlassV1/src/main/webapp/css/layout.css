@@ -1,0 +1,160 @@
+/* ==================== LAYOUT ==================== */
+/* 
+  Common layout components: sidebar, header, main areas
+  Shared across multiple pages
+*/
+
+/* Sidebar layout */
+.sidebar {
+  background: linear-gradient(180deg, var(--panel), var(--soft));
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.brand {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent));
+  box-shadow: var(--shadow);
+}
+
+.brand h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.sidebar .search {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar .footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* Header layout */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  min-height: 64px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Main content area */
+main {
+  padding: var(--gap-lg);
+  overflow: auto;
+}
+
+/* Chat-specific main area - push content to bottom */
+.grid-chat main {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Grid layouts for different page types */
+.grid-journal {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+}
+
+.grid-chat {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main"
+    "sidebar composer";
+  height: 100vh;
+}
+
+.grid-journal .sidebar {
+  grid-area: sidebar;
+}
+
+.grid-journal .header {
+  grid-area: header;
+}
+
+.grid-journal main {
+  grid-area: main;
+}
+
+.grid-chat .sidebar {
+  grid-area: sidebar;
+}
+
+.grid-chat .header {
+  grid-area: header;
+}
+
+.grid-chat main {
+  grid-area: main;
+}
+
+.grid-chat .composer {
+  grid-area: composer;
+}
+
+/* Responsive design */
+@media (max-width: 1100px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .grid-journal,
+  .grid-chat {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main";
+  }
+  
+  .grid-chat {
+    height: 100vh;
+  }
+  
+  .sidebar {
+    display: none; /* hide sidebar on small screens */
+  }
+}
