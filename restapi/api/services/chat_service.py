@@ -158,14 +158,17 @@ def get_chat_history(uid):
 @app.route('/chat/clear/<int:uid>', methods=['POST'])
 def clear_chat(uid):
     try:
+        data = request.json or {}
+        title = data.get('title', 'New Chat').strip() or 'New Chat'
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         #creating new session when chat cleared
         cursor.execute("""
             INSERT INTO chat_sessions (uid, title, created_at, updated_at)
-            VALUES (%s, 'New Chat', NOW(), NOW())
-        """, (uid,))
+            VALUES (%s, %s, NOW(), NOW())
+        """, (uid, title))
         conn.commit()
         cursor.close()
         conn.close()

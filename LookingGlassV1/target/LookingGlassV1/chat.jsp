@@ -283,13 +283,48 @@
       // New Chat button
       document.getElementById('clearChatBtn').addEventListener('click', async function(){
         const uid = uidInput.value;
+        const chatId = currentChatIDInput.value;
         if (!uid) return;
         
-        if (!confirm('Start a new chat? Current conversation will be saved.')) return;
+        // Check if current chat needs a title first
+        if (chatId) {
+          try {
+            const sessionsResponse = await fetch(API_BASE + '/chat/sessions/' + uid);
+            const sessionsData = await sessionsResponse.json();
+            if (sessionsData.success && sessionsData.sessions) {
+              const currentSession = sessionsData.sessions.find(s => s.chatID == chatId);
+              if (currentSession && currentSession.title === 'New Chat') {
+                // Prompt for title for the current chat before creating new one
+                let currentTitle = '';
+                while (!currentTitle || !currentTitle.trim()) {
+                  currentTitle = prompt('Please give the current chat a title before starting a new one:');
+                  if (currentTitle === null) {
+                    return; // User cancelled
+                  }
+                  if (!currentTitle.trim()) {
+                    alert('Title is required for the current chat.');
+                  }
+                }
+                // Save the current chat title
+                await fetch(API_BASE + '/chat/save/' + chatId, {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({title: currentTitle.trim()})
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error checking current chat title:', err);
+          }
+        }
+        
+        if (!confirm('Start a new chat?')) return;
         
         try {
           const response = await fetch(API_BASE + '/chat/clear/' + uid, {
-            method: 'POST'
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title: 'New Chat'})
           });
           
           const data = await response.json();
@@ -319,9 +354,18 @@
           alert('No active chat to save. Send a message first.');
           return;
         }
-        
-        const title = prompt('Enter a title for this conversation:');
-        if (!title || !title.trim()) return;
+        //require title for chat
+        let title = '';
+        while (!title || !title.trim()) {
+          title = prompt('Enter a title for this conversation (required):');
+          if (title === null) {
+            // User clicked cancel
+            return;
+          }
+          if (!title.trim()) {
+            alert('Title is required to save the chat.');
+          }
+        }
         
         try {
           const response = await fetch(API_BASE + '/chat/save/' + chatId, {

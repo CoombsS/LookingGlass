@@ -26,7 +26,10 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent));
+  background-image: url('../images/logo.png'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow: var(--shadow);
 }
 

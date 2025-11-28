@@ -5,13 +5,12 @@
     - [X] Fix the tags. Make it a checkbox
     - [X] Fix Gratitudes being saved wrong
     - [ ] TTS
-    - [ ] STT
 
 + Chat
     - [X] Frontend design
     - [/] REST API the python backend
-    - [ ] TTS
-    - [ ] STT
+    - [ ] TTS   
+    - [ ] STT  
     - [X] Database interaction
     - [ ] Cognitive Behavioral Therapy trained LLM
 
