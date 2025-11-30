@@ -1,0 +1,76 @@
+-- Copy and paste schema  -->
+
+CREATE DATABASE lookingglass;
+USE lookingglass;
+
+CREATE TABLE users (
+    uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    zip VARCHAR(20) NULL,
+    faceData MEDIUMBLOB NULL
+);
+
+CREATE TABLE chat_sessions (
+    chatID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    uid INT NOT NULL,
+    title VARCHAR(255) DEFAULT 'New Chat',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    avgEmotion JSON NULL,
+    dominantEmotion VARCHAR(50) NULL,
+    INDEX (uid),
+    FOREIGN KEY (uid) REFERENCES users(uid)
+);
+
+CREATE TABLE chat_messages (
+    messageID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    chatID INT NOT NULL,
+    role ENUM('user','system') NOT NULL,
+    content LONGTEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    emotionData JSON NULL,
+    dominantEmotion VARCHAR(50) NULL,
+    INDEX (chatID),
+    FOREIGN KEY (chatID) REFERENCES chat_sessions(chatID)
+);
+
+CREATE TABLE journals (
+    journalID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    uid INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    data LONGTEXT NULL,
+    time DATETIME NOT NULL,
+    whatWentWell LONGTEXT NULL,
+    whatCouldBeBetter LONGTEXT NULL,
+    userGivenMood VARCHAR(50) NULL,
+    tags JSON NULL,
+    entry LONGTEXT NULL,
+    sentiment FLOAT NULL,
+    INDEX (uid),
+    FOREIGN KEY (uid) REFERENCES users(uid)
+);
+
+CREATE TABLE gratitudes (
+    gratitudeID INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    uid VARCHAR(64) NOT NULL,
+    time TIME NOT NULL,
+    g1 VARCHAR(255) NULL,
+    g2 VARCHAR(255) NULL,
+    g3 VARCHAR(255) NULL,
+    g4 VARCHAR(255) NULL,
+    g5 VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (uid)
+);
+
+CREATE TABLE analytics (
+    analyticsID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    uid INT NOT NULL,
+    avgMoodChat FLOAT NULL,
+    avgMoodJournal FLOAT NULL,
+    daysUsed INT NULL,
+    recommendedActions LONGTEXT NULL,
+    INDEX (uid),
+    FOREIGN KEY (uid) REFERENCES users(uid)
+);
