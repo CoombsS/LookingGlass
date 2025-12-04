@@ -29,7 +29,8 @@ CREATE TABLE chat_messages (
     role ENUM('user','system') NOT NULL,
     content LONGTEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    emotionData JSON NULL,
+    facialEmotion JSON NULL,
+    chatEmotion JSON NULL,
     dominantEmotion VARCHAR(50) NULL,
     INDEX (chatID),
     FOREIGN KEY (chatID) REFERENCES chat_sessions(chatID)
