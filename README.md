@@ -15,8 +15,8 @@ To run: Download all the packages you need and set everything up in the same vir
 3. Optional: Do 'pip install -r requirements.txt'
 
 ## Roadmap
-- Journaling
-- Mood tracking dashboard
-- New chat interface 
+- Journaling (COMPLETED)
+- Mood tracking dashboard (COMPLETED)
+- New chat interface (COMPLETED)
 - Face/voice emotion detection
 - TTS and STT
