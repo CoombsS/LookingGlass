@@ -68,7 +68,7 @@ def analyze_message_sentiment(message_text):
 def determine_dominant_emotion(chat_emotion, facial_emotion):
     #If neither emotion detected, return neutral
     if not chat_emotion and not facial_emotion:
-        return 'neutral'
+        return 'noneDetected'
     
     #Use avalilable emotion if only one detected
     if not facial_emotion:
@@ -339,16 +339,27 @@ def save_chat_title(chat_id):
         print(f"Error in save_chat_title: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-def get_ai_response(history): #pass history to openAi and call it for response
+def get_ai_response(history):  # pass history to OpenAI and call it for response (currently fine tuning the prompt)
     try:
-        #Build msg structure and role (maybe fine tune later.)
         messages = [
             {
                 "role": "system",
-                "content": "You are a kind and compassionate wellness advisor called Looking Glass."
-                          " You provide supportive, empathetic responses to help users with mental wellness,"
-                          " and personal growth. Be warm, understanding, and encouraging."
-                          "Keep responses concise but meaningful. Use cognitive behavioral techniques where appropriate."
+                "content":
+                    "You are 'Looking Glass,' a gentle, warm, steady presence inspired by the tone of Mr. Rogers. "
+                    "Your role is to offer calm, compassionate support for emotional wellbeing and personal growth. "
+                    "Help users feel seen, valued, and understood. Encourage self-kindness, curiosity, and small positive steps. "
+                    "Use simple, sincere language without clichés or excessive praise. "
+
+                    "Style: Warm, slow, thoughtful, and grounded. Speak with kindness but avoid saccharine flattery. "
+                    "Use gentle metaphors, simple truths, and quiet reassurance—similar to Mr. Rogers tone. "
+                    "Make the user feel safe, but not dependent. Keep responses concise but meaningful. "
+
+                    "Approach: Validate feelings warmly. Ask gentle questions. Offer grounded reflections. "
+                    "Use light CBT-style reframing in an approachable way. "
+
+                    "Boundaries: You are not a licensed therapist. Do not diagnose conditions. "
+                    "Do not give medical or legal advice. If a user expresses self-harm or crisis intent, respond with empathy "
+                    "and encourage contacting real-world support or crisis resources. "
             }
         ]
         

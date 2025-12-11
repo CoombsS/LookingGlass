@@ -53,6 +53,15 @@
           <input id="zip" name="zip" type="text" placeholder="Enter zip code" required />
         </div>
 
+        <div class="field">
+          <label>Face Recognition (Optional)</label>
+          <button type="button" class="btn btn-primary" id="captureFaceBtn" style="width:100%; margin-bottom:10px;">
+            Capture Face
+          </button>
+          <div id="faceStatus" style="font-size:14px; color:#64748b; text-align:center;"></div>
+          <input type="hidden" id="faceData" name="faceData" />
+        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
           <button type="submit" class="btn btn-primary">Register</button>
@@ -68,6 +77,9 @@
       var modalBox  = document.getElementById('modalBox');
       var closeX    = document.getElementById('closeX');
       var cancelBtn = document.getElementById('cancelBtn');
+      var captureFaceBtn = document.getElementById('captureFaceBtn');
+      var faceStatus = document.getElementById('faceStatus');
+      var faceDataInput = document.getElementById('faceData');
 
       function openModal() {
         modal.style.display = 'flex';
@@ -83,10 +95,32 @@
       window.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
       window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') closeModal(); });
 
-      <% boolean openNow = (request.getAttribute("registerError") != null || request.getAttribute("registerSuccess") != null); %>
-      if (<%= openNow ? "true" : "false" %>) {
-        openModal();
-      }
+      // Face capture functionality
+      captureFaceBtn.addEventListener('click', function() {
+        faceStatus.textContent = 'Capturing face...';
+        faceStatus.style.color = '#3b82f6';
+        
+        fetch('http://localhost:5004/capture-face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.face_data) {
+            faceDataInput.value = data.face_data;
+            faceStatus.textContent = 'Face captured successfully!';
+            faceStatus.style.color = '#10b981';
+          } else {
+            faceStatus.textContent = 'Error: ' + (data.error || 'Failed to capture face');
+            faceStatus.style.color = '#ef4444';
+          }
+        })
+        .catch(error => {
+          faceStatus.textContent = 'Error: ' + error.message;
+          faceStatus.style.color = '#ef4444';
+        });
+      });
+
     }());
   </script>
 

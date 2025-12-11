@@ -39,6 +39,13 @@
           <input id="psw" name="psw" type="password" placeholder="Enter password" autocomplete="current-password" required />
         </div>
 
+        <div class="field" style="text-align:center; margin-top:10px;">
+          <button type="button" class="btn btn-primary" id="faceLoginBtn" style="width:100%; background-color:#06b6d4;">
+            Login with Face
+          </button>
+          <div id="faceStatus" style="font-size:14px; color:#64748b; margin-top:8px;"></div>
+        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
           <button type="submit" class="btn btn-primary">Sign in</button>
@@ -58,6 +65,9 @@
       var modalBox  = document.getElementById('modalBox');
       var closeX    = document.getElementById('closeX');
       var cancelBtn = document.getElementById('cancelBtn');
+      var faceLoginBtn = document.getElementById('faceLoginBtn');
+      var faceStatus = document.getElementById('faceStatus');
+      var loginForm = document.getElementById('loginForm');
 
       function openModal() {
         modal.style.display = 'flex';
@@ -73,11 +83,52 @@
       window.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
       window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') closeModal(); });
 
-   
-      <% boolean openNow = (request.getAttribute("loginError") != null); %>
-      if (<%= openNow ? "true" : "false" %>) {
-        openModal();
-      }
+      // Face login functionality; fills in fields when recognized
+      faceLoginBtn.addEventListener('click', function() {
+        faceStatus.textContent = 'Capturing face...';
+        faceStatus.style.color = '#3b82f6';
+        
+        fetch('http://localhost:5004/capture-face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.face_data) {
+            faceStatus.textContent = 'Verifying face...';
+            return fetch('http://localhost:5004/verify-face', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ face_data: data.face_data })
+            });
+          } else {
+            throw new Error(data.error || 'Failed to capture face');
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.recognized && data.username) {
+            faceStatus.textContent = 'Recognized as ' + data.username + 'Logging in...';
+            faceStatus.style.color = '#10b981';
+            
+            // Auto-fill username and submit form
+            document.getElementById('uname').value = data.username;
+            document.getElementById('psw').value = 'FACE_AUTH_' + data.username;
+            
+            setTimeout(function() {
+              loginForm.submit();
+            }, 1000);
+          } else {
+            faceStatus.textContent = 'Face not recognized. Please use password login.';
+            faceStatus.style.color = '#ef4444';
+          }
+        })
+        .catch(error => {
+          faceStatus.textContent = 'Error: ' + error.message;
+          faceStatus.style.color = '#ef4444';
+        });
+      });
+
     }());
   </script>
 

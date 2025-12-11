@@ -33,7 +33,7 @@
       <p class="muted" style="padding: 12px;">Loading conversations...</p>
     </div>
 
-    <div class="footer">Click here for resources</div>
+    <div class="footer">Check analytics tab for recommended resources</div>
   </aside>
 
   <input type="hidden" id="uid" value='<%= (session != null && session.getAttribute("uid") != null) ? session.getAttribute("uid").toString() : "" %>' />

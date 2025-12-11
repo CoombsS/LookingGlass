@@ -20,8 +20,9 @@
     - [X] Journal usage statistics
     - [X] Chat usage statistics
     - [X] Database interaction
-    - [ ] Recommendation system
+    - [ ] Recommendation system and section
     - [ ] Add counts to tag usage
+    - [ ] Remove the time filter in top right or make functional
 
 + Emotion Detection
     - [X] Sentiement analysis from journal entries
@@ -34,4 +35,4 @@
     - [X] Frontend design 
     - [X] Backend integration
     - [X] Database interaction
-    - [ ] Face detection 2 factor authentication
+    - [/] Face detection 2 factor authentication (still needs fine tuning but base is there)

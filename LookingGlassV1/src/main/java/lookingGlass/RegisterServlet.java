@@ -6,10 +6,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import org.json.JSONObject;
 
 public class RegisterServlet extends HttpServlet {
     private static final String ENC = "UTF-8";
+    private static final String FACE_SERVICE_URL = "http://localhost:5004/learn-face";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -78,6 +84,17 @@ public class RegisterServlet extends HttpServlet {
             session.setAttribute("uid", newUid);
             session.setAttribute("username", username);
 
+            // Handling face data if passed
+            String faceData = req.getParameter("faceData");
+            if (faceData != null && !faceData.trim().isEmpty()) {
+                try {
+                    learnFace(username, faceData);
+                } catch (Exception e) {
+                    //Error logging only; do not block registration
+                    System.err.println("Failed to learn face for user " + username + ": " + e.getMessage());
+                }
+            }
+
             resp.sendRedirect(resp.encodeRedirectURL(req.getContextPath() + "/journal.jsp"));
         } catch (SQLException e) {
             req.setAttribute("registerError", "Database error: " + e.getMessage());
@@ -89,4 +106,26 @@ public class RegisterServlet extends HttpServlet {
         return s == null || s.trim().isEmpty();
     }
     private static String trim(String s) { return s == null ? null : s.trim(); }
+    //Send to service to learn face data (pretty much copy pasted from previous project)
+    private void learnFace(String username, String faceData) throws Exception {
+        URL url = new URL(FACE_SERVICE_URL);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        String jsonPayload = String.format("{\"username\":\"%s\",\"face_data\":\"%s\"}", 
+            username.replace("\"", "\\\""), 
+            faceData.replace("\"", "\\\""));
+
+        try (OutputStream os = conn.getOutputStream()) {
+            byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        int responseCode = conn.getResponseCode();
+        if (responseCode != 200) {
+            throw new IOException("Face service returned code: " + responseCode);
+        }
+    }
 }

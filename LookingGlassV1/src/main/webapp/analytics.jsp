@@ -526,6 +526,7 @@
           <li><a href="#journal-insights" class="nav-link">Journal Insights</a></li>
           <li><a href="#chat-insights" class="nav-link">Chat Insights</a></li>
           <li><a href="#trends" class="nav-link">Trends</a></li>
+          <li><a href="#resources" class="nav-link">Recommended Resources</a></li>
         </ul>
       </nav>
     </div>
@@ -746,7 +747,6 @@
           </div>
         </div>
       </div>
-
       <!-- Achievement Cards -->
       <div class="achievements-grid">
         <div class="achievement-card">
@@ -771,6 +771,20 @@
         </div>
       </div>
     </section>
+
+
+     <!-- Recommended Resources Section TO BE FINISHED-->
+      <section id="Resources" class = "resources-section">
+        <h2 class ="section-title">Recommended Resources</h2>
+        <div class="resources-grid">
+
+      </section>
+
+
+
+
+
+
   </main>
 
   <!-- JavaScript for dynamic features -->
