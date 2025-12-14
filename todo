@@ -8,11 +8,11 @@
 
 + Chat
     - [X] Frontend design
-    - [/] REST API the python backend
+    - [/] REST API the python backend (Needs tts stt then done)
     - [ ] TTS   
     - [ ] STT  
     - [X] Database interaction
-    - [/] Cognitive Behavioral Therapy trained LLM
+    - [X] Cognitive Behavioral Therapy trained LLM
 
 + Analytics
     - [X] Basic analytics dashboard layout
@@ -28,8 +28,7 @@
     - [X] Sentiement analysis from journal entries
     - [X] Sentiment analysis chat messages
     - [ ] Emotion detection from voice: Chat
-    - [ ] Emotion detection from voice: Journal
-    - [ ] Emotion detection from images
+    - [X] Emotion detection from images
 
 + Sign Up Page
     - [X] Frontend design 
