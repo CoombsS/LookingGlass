@@ -26,14 +26,14 @@
     </div>
 
     <div class="search">
-      <input class="input" type="search" placeholder="Search chats..." aria-label="Search conversations" />
+      <input class="input" id="chatSearchInput" type="search" placeholder="Search chats..." aria-label="Search conversations" />
     </div>
 
     <div class="list" role="list" id="chatSessionsList">
       <p class="muted" style="padding: 12px;">Loading conversations...</p>
     </div>
 
-    <div class="footer">Click here for resources</div>
+    <div class="footer">Check analytics tab for recommended resources</div>
   </aside>
 
   <input type="hidden" id="uid" value='<%= (session != null && session.getAttribute("uid") != null) ? session.getAttribute("uid").toString() : "" %>' />
@@ -72,7 +72,7 @@
           <textarea id="message" class="ta" placeholder="Type a message... (Shift+Enter for newline)" aria-label="Message"></textarea>
           <button class="btn primary" id="sendBtn" type="button">Send</button>
         </div>
-        <div class="hint">Press Enter to send</div>
+        <div class="hint" id="statusHint">Press Enter to send</div>
       </div>
     </section>
 
@@ -87,6 +87,10 @@
       const uidInput = document.getElementById('uid');
       const currentChatIDInput = document.getElementById('currentChatID');
       const chatSessionsList = document.getElementById('chatSessionsList');
+      const chatSearchInput = document.getElementById('chatSearchInput');
+      const statusHint = document.getElementById('statusHint');
+      let allSessions = [];
+      
       // Date/time formatting (chat helped with this as well)
       function pad(n){ return n<10 ? '0'+n : ''+n; }
       function formatTime(dateStr){
@@ -169,31 +173,63 @@
           .then(res => res.json())
           .then(data => {
             if (data.success && data.sessions) {
-              if (data.sessions.length === 0) {
-                chatSessionsList.innerHTML = '<p class="muted" style="padding: 12px;">No conversations yet. Start chatting!</p>';
-                return;
-              }
-              chatSessionsList.innerHTML = '';
-              data.sessions.forEach(session => {
-                const convDiv = document.createElement('div');
-                convDiv.className = 'conv';
-                convDiv.role = 'listitem';
-                convDiv.tabIndex = 0;
-                convDiv.dataset.chatId = session.chatID;
-                const title = session.title || 'New Chat';
-                const date = formatDate(session.updated_at);
-                const msgCount = session.message_count || 0;
-                convDiv.innerHTML = `
-                  <h3>\${escapeHtml(title)}</h3>
-                  <div class="meta"><span>\${date}</span><span class="tag">\${msgCount} messages</span></div>
-                `;
-                convDiv.addEventListener('click', () => loadSpecificChat(session.chatID));
-                chatSessionsList.appendChild(convDiv);
-              });
+              allSessions = data.sessions; // Store all sessions 
+              displaySessions(allSessions);
             }
           })
           .catch(err => console.error('Error loading chat sessions:', err));
       }
+      
+      function displaySessions(sessions){
+        if (sessions.length === 0) {
+          const searchQuery = chatSearchInput.value.trim();
+          if (searchQuery) {
+            chatSessionsList.innerHTML = '<p class="muted" style="padding: 12px;">No conversations match "' + escapeHtml(searchQuery) + '"</p>';
+          } else {
+            chatSessionsList.innerHTML = '<p class="muted" style="padding: 12px;">No conversations yet. Start chatting!</p>';
+          }
+          return;
+        }
+        
+        chatSessionsList.innerHTML = '';
+        sessions.forEach(session => {
+          const convDiv = document.createElement('div');
+          convDiv.className = 'conv';
+          convDiv.role = 'listitem';
+          convDiv.tabIndex = 0;
+          convDiv.dataset.chatId = session.chatID;
+          const title = session.title || 'New Chat';
+          const date = formatDate(session.updated_at);
+          const msgCount = session.message_count || 0;
+          convDiv.innerHTML = `
+            <h3>\${escapeHtml(title)}</h3>
+            <div class="meta"><span>\${date}</span><span class="tag">\${msgCount} messages</span></div>
+          `;
+          convDiv.addEventListener('click', () => loadSpecificChat(session.chatID));
+          chatSessionsList.appendChild(convDiv);
+        });
+      }
+      
+      function filterSessions(){
+        const searchQuery = chatSearchInput.value.trim().toLowerCase();
+        
+        if (!searchQuery) {
+          // No search, show all sessions
+          displaySessions(allSessions);
+          return;
+        }
+        
+        // Filter sessions by title or date
+        const filteredSessions = allSessions.filter(session => {
+          const title = (session.title || 'New Chat').toLowerCase();
+          const date = formatDate(session.updated_at).toLowerCase();
+          
+          return title.includes(searchQuery) || date.includes(searchQuery);
+        });
+        
+        displaySessions(filteredSessions);
+      }
+      chatSearchInput.addEventListener('input', filterSessions);
 
       function loadSpecificChat(chatId){
         fetch(API_BASE + '/chat/session/' + chatId)
@@ -222,19 +258,78 @@
         const message = messageEl.value.trim();
         const uid = uidInput.value;
         if (!message || !uid) return;
+        
         // Disable send button
         sendBtn.disabled = true;
         messageEl.disabled = true;
+        
+        // Capture facial emotion before sending
+        statusHint.textContent = 'Analyzing facial emotion...';
+        statusHint.style.color = '#3b82f6';
+        
+        let facialEmotionData = null;
+        try {
+          console.log('[DEBUG] Attempting to capture facial emotion...');
+          const emotionResponse = await fetch('http://localhost:5004/analyze-emotion', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+          });
+          
+          console.log('[DEBUG] Emotion response status:', emotionResponse.status);
+          
+          if (emotionResponse.ok) {
+            const emotionData = await emotionResponse.json();
+            console.log('[DEBUG] Emotion data received:', emotionData);
+            
+            if (emotionData.success) {
+              facialEmotionData = {
+                emotion: emotionData.emotion,
+                confidence: emotionData.confidence,
+                all_emotions: emotionData.all_emotions
+              };
+              console.log('[DEBUG] Facial emotion captured successfully:', facialEmotionData);
+              statusHint.textContent = `Emotion detected: ${emotionData.emotion}`;
+              statusHint.style.color = '#10b981';
+            } else {
+              console.warn('[DEBUG] Emotion data success=false:', emotionData);
+              statusHint.textContent = 'Emotion capture failed, sending message...';
+              statusHint.style.color = '#f59e0b';
+            }
+          } else {
+            const errorData = await emotionResponse.json();
+            console.warn('[DEBUG] Emotion response not OK:', errorData);
+            statusHint.textContent = 'Emotion capture failed, sending message...';
+            statusHint.style.color = '#f59e0b';
+          }
+        } catch (emotionErr) {
+          console.error('[DEBUG] Exception during emotion capture:', emotionErr);
+          statusHint.textContent = 'Emotion capture failed, sending message...';
+          statusHint.style.color = '#f59e0b';
+          // Continue with message send even if emotion capture fails
+        }
+        
         // Show typing indicator
+        statusHint.textContent = 'Sending message...';
+        statusHint.style.color = '#3b82f6';
         typingRow.style.display = 'flex';
         scrollToBottom();
+        
         try {
+          const payload = {
+            uid: parseInt(uid), 
+            message: message,
+            facialEmotion: facialEmotionData
+          };
+          console.log('[DEBUG] Sending to chat service:', payload);
+          
           const response = await fetch(API_BASE + '/chat/send', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({uid: parseInt(uid), message: message})
+            body: JSON.stringify(payload)
           });
           const data = await response.json();
+          console.log('[DEBUG] Chat service response:', data);
+          
           if (data.success) {
             // Update current chat ID if this is a new chat
             if (data.chatID && !currentChatIDInput.value) {
@@ -262,6 +357,10 @@
           // Hide typing indicator
           typingRow.style.display = 'none';
           
+          // Reset status hint
+          statusHint.textContent = 'Press Enter to send';
+          statusHint.style.color = '';
+          
           // Re-enable inputs
           sendBtn.disabled = false;
           messageEl.disabled = false;
@@ -283,13 +382,48 @@
       // New Chat button
       document.getElementById('clearChatBtn').addEventListener('click', async function(){
         const uid = uidInput.value;
+        const chatId = currentChatIDInput.value;
         if (!uid) return;
         
-        if (!confirm('Start a new chat? Current conversation will be saved.')) return;
+        // Check if current chat needs a title first
+        if (chatId) {
+          try {
+            const sessionsResponse = await fetch(API_BASE + '/chat/sessions/' + uid);
+            const sessionsData = await sessionsResponse.json();
+            if (sessionsData.success && sessionsData.sessions) {
+              const currentSession = sessionsData.sessions.find(s => s.chatID == chatId);
+              if (currentSession && currentSession.title === 'New Chat') {
+                // Prompt for title for the current chat before creating new one
+                let currentTitle = '';
+                while (!currentTitle || !currentTitle.trim()) {
+                  currentTitle = prompt('Please give the current chat a title before starting a new one:');
+                  if (currentTitle === null) {
+                    return; // User cancelled
+                  }
+                  if (!currentTitle.trim()) {
+                    alert('Title is required for the current chat.');
+                  }
+                }
+                // Save the current chat title
+                await fetch(API_BASE + '/chat/save/' + chatId, {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({title: currentTitle.trim()})
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error checking current chat title:', err);
+          }
+        }
+        
+        if (!confirm('Start a new chat?')) return;
         
         try {
           const response = await fetch(API_BASE + '/chat/clear/' + uid, {
-            method: 'POST'
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title: 'New Chat'})
           });
           
           const data = await response.json();
@@ -319,9 +453,18 @@
           alert('No active chat to save. Send a message first.');
           return;
         }
-        
-        const title = prompt('Enter a title for this conversation:');
-        if (!title || !title.trim()) return;
+        //require title for chat
+        let title = '';
+        while (!title || !title.trim()) {
+          title = prompt('Enter a title for this conversation (required):');
+          if (title === null) {
+            // User clicked cancel
+            return;
+          }
+          if (!title.trim()) {
+            alert('Title is required to save the chat.');
+          }
+        }
         
         try {
           const response = await fetch(API_BASE + '/chat/save/' + chatId, {

@@ -4,6 +4,7 @@ import javax.servlet.http.*;
 import java.io.IOException;
 public class LoginServlet extends HttpServlet {
     private static final String ENC = "UTF-8";
+    private static final String FACE_AUTH_ = "FACE_AUTH_";
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
@@ -26,12 +27,23 @@ public class LoginServlet extends HttpServlet {
             req.getRequestDispatcher("/login.jsp").forward(req, resp);
             return;
         }
-        String sql = "SELECT uid, username FROM users " +
-                     "WHERE username = ? AND BINARY RTRIM(password) = BINARY ? LIMIT 1";
+        
+        // Check if this is a face authentication login
+        boolean isFaceAuth = password.startsWith(FACE_AUTH_);
+        
+        String sql;
+        if (isFaceAuth) {
+            sql = "SELECT uid, username FROM users WHERE username = ? LIMIT 1";
+        } else {
+            sql = "SELECT uid, username FROM users WHERE username = ? AND BINARY RTRIM(password) = BINARY ? LIMIT 1";
+        }
+        
         try (java.sql.Connection con = Db.getConnection();
              java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, username.trim());
-            ps.setString(2, password);
+            if (!isFaceAuth) {
+                ps.setString(2, password);
+            }
             Integer dbUid = null;
             String dbUser = null;
             try (java.sql.ResultSet rs = ps.executeQuery()) {

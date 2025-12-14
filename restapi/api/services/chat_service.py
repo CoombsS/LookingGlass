@@ -5,6 +5,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
 from datetime import datetime
+import json
 
 load_dotenv()
 
@@ -25,12 +26,72 @@ OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+def analyze_message_sentiment(message_text):
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {OPENAI_API_KEY}"
+            },
+            json={
+                "model": OPENAI_MODEL,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You will be doing sentiment analysis. Analyze the text and return a JSON object with only 'emotion' (happy, neutral, sad, angry, confused, anxious, excited) and 'confidence' (0-1). Be concise."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Analyze the emotion in this message: {message_text}"
+                    }
+                ],
+                "temperature": 0.3,
+                "max_tokens": 50,
+                "response_format": {"type": "json_object"}
+            },
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()["choices"][0]["message"]["content"]
+            emotion_data = json.loads(result)
+            return emotion_data
+        else:
+            print(f"Sentiment analysis error: {response.text}")
+            return {'emotion': 'neutral', 'confidence': 0}
+            
+    except Exception as e:
+        print(f"Error analyzing sentiment: {e}")
+        return {'emotion': 'neutral', 'confidence': 0}
+
+def determine_dominant_emotion(chat_emotion, facial_emotion):
+    #If neither emotion detected, return neutral
+    if not chat_emotion and not facial_emotion:
+        return 'noneDetected'
+    
+    #Use avalilable emotion if only one detected
+    if not facial_emotion:
+        return chat_emotion.get('emotion', 'neutral')
+    if not chat_emotion:
+        return facial_emotion.get('emotion', 'neutral')
+    
+    # Use the one with higher confidence, maybe do weighted average later?
+    chat_conf = chat_emotion.get('confidence', 0)
+    facial_conf = facial_emotion.get('confidence', 0)
+    
+    if facial_conf > chat_conf:
+        return facial_emotion.get('emotion', 'neutral')
+    else:
+        return chat_emotion.get('emotion', 'neutral')
+
 @app.route('/chat/send', methods=['POST'])
 def send_message():
     try:
         data = request.json
         uid = data.get('uid')
         user_message = data.get('message', '').strip()
+        facial_emotion_data = data.get('facialEmotion')  # Facial emotion captured from webcam
         
         if not uid or not user_message: 
             return jsonify({"success": False, "error": "Missing uid or message"}), 400 
@@ -57,11 +118,31 @@ def send_message():
         else:
             chat_id = session['chatID']
         
-        #Save user message
+        #Sentiment from msg
+        chat_emotion_data = analyze_message_sentiment(user_message)
+        
+        print(f"[DEBUG] Chat emotion: {chat_emotion_data}")
+        print(f"[DEBUG] Facial emotion received: {facial_emotion_data}")
+        
+        #Determine dominant emotion
+        dominant_emotion = determine_dominant_emotion(chat_emotion_data, facial_emotion_data)
+        
+        print(f"[DEBUG] Dominant emotion: {dominant_emotion}")
+        
+        #Prepare JSON strings for DB 
+        chat_emotion_json = json.dumps(chat_emotion_data)
+        if facial_emotion_data:
+            facial_emotion_json = json.dumps(facial_emotion_data)
+        else:
+            facial_emotion_json = None
+        
+        print(f"[DEBUG] Saving to DB - chatEmotion: {chat_emotion_json}, facialEmotion: {facial_emotion_json}")
+        
+        #Save user message w/ sentiment data
         cursor.execute("""
-            INSERT INTO chat_messages (chatID, role, content, created_at)
-            VALUES (%s, 'user', %s, NOW())
-        """, (chat_id, user_message))
+            INSERT INTO chat_messages (chatID, role, content, created_at, chatEmotion, facialEmotion, dominantEmotion)
+            VALUES (%s, 'user', %s, NOW(), %s, %s, %s)
+        """, (chat_id, user_message, chat_emotion_json, facial_emotion_json, dominant_emotion))
         conn.commit()
         user_msg_id = cursor.lastrowid
         
@@ -101,6 +182,9 @@ def send_message():
                 "messageID": user_msg_id,
                 "role": "user",
                 "content": user_message,
+                "dominantEmotion": dominant_emotion,
+                "chatEmotion": chat_emotion_data,
+                "facialEmotion": facial_emotion_data,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             },
             "aiMessage": {
@@ -135,7 +219,7 @@ def get_chat_history(uid):
         
         #Get msgs
         cursor.execute("""
-            SELECT messageID, role, content, created_at
+            SELECT messageID, role, content, created_at, dominantEmotion, chatEmotion, facialEmotion
             FROM chat_messages
             WHERE chatID = %s
             ORDER BY created_at ASC
@@ -158,14 +242,17 @@ def get_chat_history(uid):
 @app.route('/chat/clear/<int:uid>', methods=['POST'])
 def clear_chat(uid):
     try:
+        data = request.json or {}
+        title = data.get('title', 'New Chat').strip() or 'New Chat'
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         #creating new session when chat cleared
         cursor.execute("""
             INSERT INTO chat_sessions (uid, title, created_at, updated_at)
-            VALUES (%s, 'New Chat', NOW(), NOW())
-        """, (uid,))
+            VALUES (%s, %s, NOW(), NOW())
+        """, (uid, title))
         conn.commit()
         cursor.close()
         conn.close()
@@ -217,7 +304,7 @@ def get_session_messages(chat_id):
         
         #Get msgs
         cursor.execute("""
-            SELECT messageID, role, content, created_at
+            SELECT messageID, role, content, created_at, dominantEmotion, chatEmotion, facialEmotion
             FROM chat_messages
             WHERE chatID = %s
             ORDER BY created_at ASC
@@ -259,16 +346,27 @@ def save_chat_title(chat_id):
         print(f"Error in save_chat_title: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-def get_ai_response(history): #pass history to openAi and call it for response
+def get_ai_response(history):  # pass history to OpenAI and call it for response (currently fine tuning the prompt)
     try:
-        #Build msg structure and role (maybe fine tune later.)
         messages = [
             {
                 "role": "system",
-                "content": "You are a kind and compassionate wellness advisor called Looking Glass."
-                          " You provide supportive, empathetic responses to help users with mental wellness,"
-                          " and personal growth. Be warm, understanding, and encouraging."
-                          "Keep responses concise but meaningful. Use cognitive behavioral techniques where appropriate."
+                "content":
+                    "You are 'Looking Glass,' a gentle, warm, steady presence inspired by the tone of Mr. Rogers. "
+                    "Your role is to offer calm, compassionate support for emotional wellbeing and personal growth. "
+                    "Help users feel seen, valued, and understood. Encourage self-kindness, curiosity, and small positive steps. "
+                    "Use simple, sincere language without clichés or excessive praise. "
+
+                    "Style: Warm, slow, thoughtful, and grounded. Speak with kindness but avoid saccharine flattery. "
+                    "Use gentle metaphors, simple truths, and quiet reassurance—similar to Mr. Rogers tone. "
+                    "Make the user feel safe, but not dependent. Keep responses concise but meaningful. "
+
+                    "Approach: Validate feelings warmly. Ask gentle questions. Offer grounded reflections. "
+                    "Use light CBT-style reframing in an approachable way. "
+
+                    "Boundaries: You are not a licensed therapist. Do not diagnose conditions. "
+                    "Do not give medical or legal advice. If a user expresses self-harm or crisis intent, respond with empathy "
+                    "and encourage contacting real-world support or crisis resources. "
             }
         ]
         

@@ -24,8 +24,7 @@
     <ul class="drawer-list">
       <li><a href="<%=request.getContextPath()%>/chat.jsp">Chat</a></li>
       <li><a href="<%=request.getContextPath()%>/journal.jsp">Journal</a></li>
-      <li><a href="<%=request.getContextPath()%>/survey.jsp">Take Survey</a></li>
-      <li><a href="<%=request.getContextPath()%>/results.jsp">Results</a></li>
+      <li><a href="<%=request.getContextPath()%>/analytics.jsp">Analytics</a></li>
     </ul>
   </nav>
 </aside>

@@ -53,6 +53,16 @@
           <input id="zip" name="zip" type="text" placeholder="Enter zip code" required />
         </div>
 
+        <div class="field">
+          <label>Face Recognition (Optional)</label>
+          <button type="button" class="btn btn-primary" id="captureFaceBtn" style="width:100%; margin-bottom:10px;">
+            Capture Face (1/3)
+          </button>
+          <div id="faceStatus" style="font-size:14px; color:#64748b; text-align:center;"></div>
+          <div id="faceProgress" style="font-size:12px; color:#64748b; text-align:center; margin-top:5px;"></div>
+          <input type="hidden" id="faceData" name="faceData" />
+        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
           <button type="submit" class="btn btn-primary">Register</button>
@@ -68,6 +78,14 @@
       var modalBox  = document.getElementById('modalBox');
       var closeX    = document.getElementById('closeX');
       var cancelBtn = document.getElementById('cancelBtn');
+      var captureFaceBtn = document.getElementById('captureFaceBtn');
+      var faceStatus = document.getElementById('faceStatus');
+      var faceProgress = document.getElementById('faceProgress');
+      var faceDataInput = document.getElementById('faceData');
+      
+      var capturedFaces = [];
+      var captureCount = 0;
+      var totalCaptures = 3;
 
       function openModal() {
         modal.style.display = 'flex';
@@ -83,10 +101,61 @@
       window.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
       window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') closeModal(); });
 
-      <% boolean openNow = (request.getAttribute("registerError") != null || request.getAttribute("registerSuccess") != null); %>
-      if (<%= openNow ? "true" : "false" %>) {
-        openModal();
-      }
+      // Face capture functionality - capture 3 times
+      captureFaceBtn.addEventListener('click', function() {
+        faceStatus.textContent = 'Capturing face ' + (captureCount + 1) + '...';
+        faceStatus.style.color = '#3b82f6';
+        captureFaceBtn.disabled = true;
+        
+        fetch('http://localhost:5004/capture-face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.face_data) {
+            capturedFaces.push(data.face_data);
+            captureCount++;
+            
+            if (captureCount < totalCaptures) {
+              faceStatus.textContent = 'Face ' + captureCount + ' captured! Please capture again.';
+              faceStatus.style.color = '#10b981';
+              faceProgress.textContent = 'Progress: ' + captureCount + '/' + totalCaptures;
+              captureFaceBtn.textContent = 'Capture Face (' + (captureCount + 1) + '/3)';
+              captureFaceBtn.disabled = false;
+            } else {
+              // All 3 faces captured
+              faceDataInput.value = JSON.stringify(capturedFaces);
+              faceStatus.textContent = 'All 3 faces captured successfully!';
+              faceStatus.style.color = '#10b981';
+              faceProgress.textContent = 'Complete: 3/3';
+              captureFaceBtn.textContent = 'Re-capture Faces';
+              captureFaceBtn.disabled = false;
+              
+              // Allow re-capturing by resetting
+              captureFaceBtn.addEventListener('click', function resetCapture() {
+                capturedFaces = [];
+                captureCount = 0;
+                faceDataInput.value = '';
+                faceStatus.textContent = '';
+                faceProgress.textContent = '';
+                captureFaceBtn.textContent = 'Capture Face (1/3)';
+                captureFaceBtn.removeEventListener('click', resetCapture);
+              }, { once: true });
+            }
+          } else {
+            faceStatus.textContent = 'Error: ' + (data.error || 'Failed to capture face');
+            faceStatus.style.color = '#ef4444';
+            captureFaceBtn.disabled = false;
+          }
+        })
+        .catch(error => {
+          faceStatus.textContent = 'Error: ' + error.message;
+          faceStatus.style.color = '#ef4444';
+          captureFaceBtn.disabled = false;
+        });
+      });
+
     }());
   </script>
 

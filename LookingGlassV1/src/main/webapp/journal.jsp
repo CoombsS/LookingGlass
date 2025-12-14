@@ -126,7 +126,7 @@
       </div>
     </section>
 
-    <div class="footer">Click here for dictation (not working currently)</div>
+    <div class="footer">For resources, please click here</div>
   </aside>
 
   <!-- Actual journal -->
@@ -202,6 +202,9 @@
                     <div class="field">
                       <label for="content">Entry</label>
                       <textarea id="content" name="entry" placeholder="Stream of thoughts, gratitude list, or how was your day?"></textarea>
+                      <button type="button" class="btn mic-btn" id="micBtn" title="Voice input" style="margin-top: 8px; min-width: auto; padding: 8px 12px;">
+                        Record
+                      </button>
                     </div>
 
                     <details>
@@ -209,11 +212,17 @@
                       <div class="grid">
                         <div class="field">
                           <label>What went well?</label>
-                          <textarea name="whatWentWell" placeholder="Wins and bright spots..."></textarea>
+                          <textarea id="whatWentWell" name="whatWentWell" placeholder="Wins and bright spots..."></textarea>
+                          <button type="button" class="btn mic-btn" data-target="whatWentWell" title="Voice input" style="margin-top: 8px; min-width: auto; padding: 8px 12px;">
+                            Record
+                          </button>
                         </div>
                         <div class="field">
                           <label>What could be better?</label>
-                          <textarea name="whatCouldBeBetter" placeholder="Stumbles, lessons, next steps..."></textarea>
+                          <textarea id="whatCouldBeBetter" name="whatCouldBeBetter" placeholder="Stumbles, lessons, next steps..."></textarea>
+                          <button type="button" class="btn mic-btn" data-target="whatCouldBeBetter" title="Voice input" style="margin-top: 8px; min-width: auto; padding: 8px 12px;">
+                            Record
+                          </button>
                         </div>
                       </div>
                     </details>
@@ -287,7 +296,7 @@
             <section class="card" style="max-width:940px; margin-inline:auto;">
               <div class="body">
                 <h2>Gratitude Log</h2>
-                <p class="muted">Write 3-5 quick bullets. Keep it light and specific.</p>
+                <p class="muted">Write 3-5 quick bullets for what you're grateful for today.</p>
 
                 <div class="fieldset">
                   <div class="field"><label for="g1">#1</label><input id="g1" name="g1" type="text" placeholder="A person, moment, or tiny win..." /></div>
@@ -328,7 +337,7 @@
     </div>
   </div>
 
-  <!-- Helpers and random stuff-->
+  <!--------------------------------- Helpers and random stuff---------------------------------------------->
 
   <!-- Formating time -->
   <script>
@@ -541,6 +550,163 @@
         container.appendChild(el);
       });
     });
+
+    //------------------------------------------------------- Speech to text-----------------------------------------
+    
+    (function() {
+      const TRANSCRIPTION_API = 'http://127.0.0.1:5002/transcribe';
+      
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let isRecording = false;
+      let currentTarget = null;
+      let currentButton = null;
+
+      //Checking if browser supports mediarecorder (chat added this when I was debugging and may as well stay)
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('Media recording not supported in this browser');
+        document.querySelectorAll('.mic-btn').forEach(btn => btn.style.display = 'none');
+        return;
+      }
+
+      async function startRecording(targetElement, button) {
+        if (isRecording) {
+          stopRecording();
+          return;
+        }
+        try {
+          //Get mic access
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          
+          //Create mediarecorder
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          currentTarget = targetElement;
+          currentButton = button;
+          isRecording = true;
+
+          //Buttons 
+          button.textContent = 'Recording';
+          button.style.backgroundColor = '#ff4444';
+          button.style.color = 'white';
+          button.title = 'Stop recording';
+
+          //Break up addio data into chunks and send 
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data);
+            }
+          };
+
+          // Handle recording stop
+          mediaRecorder.onstop = async () => {
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+            // Create audio blob
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            // Send to transcription service
+            await transcribeAudio(audioBlob);
+            // Reset the button
+            resetButton(button);
+          };
+          // Start recording
+          mediaRecorder.start();
+          console.log('Recording started...');
+        } catch (error) {
+          console.error('Error microphone could not be accessed:', error);
+          alert('I could not access your microphone, please allow it in your browser.');
+          resetButton(button);
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && isRecording) {
+          isRecording = false;
+          mediaRecorder.stop();
+          console.log('Recording has stopped');
+        }
+      }
+
+      async function transcribeAudio(audioBlob) {
+        try {
+          //Loading state
+          if (currentButton) {
+            currentButton.textContent = 'Processing';
+            currentButton.title = 'Transcribing...';
+          }
+
+          //Prepare data to be sent
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+
+          // Send to transcription 
+          const response = await fetch(TRANSCRIPTION_API, {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          if (data.success && data.text) {
+            // then put in form
+            if (currentTarget) {
+              const currentValue = currentTarget.value;
+              const separator = currentValue && !currentValue.endsWith(' ') ? ' ' : '';
+              currentTarget.value = currentValue + separator + data.text;
+            }
+          } else {
+            throw new Error(data.error || 'Transcription failed');
+          }
+        } catch (error) {
+          console.error('Transcription error:', error);
+          alert('Failed to transcribe audio: ' + error.message);
+        }
+      }
+
+      function resetButton(button) {
+        if (button) {
+          button.textContent = 'Record';
+          button.style.backgroundColor = '';
+          button.style.color = '';
+          button.title = 'Voice input';
+        }
+        isRecording = false;
+        currentTarget = null;
+        currentButton = null;
+      }
+
+      //Mic bottons
+      const mainMicBtn = document.getElementById('micBtn');
+      const mainTextarea = document.getElementById('content');
+      
+      if (mainMicBtn && mainTextarea) {
+        mainMicBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          startRecording(mainTextarea, mainMicBtn);
+        });
+      }
+
+  
+      document.querySelectorAll('.mic-btn[data-target]').forEach(function(btn) {
+        const targetId = btn.getAttribute('data-target');
+        const targetElement = document.getElementById(targetId);
+        
+        if (targetElement) {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            startRecording(targetElement, btn);
+          });
+        }
+      });
+
+      //Recording stopped on form submittion
+      const form = document.getElementById('journalForm');
+      if (form) {
+        form.addEventListener('submit', function() {
+          if (isRecording) {
+            stopRecording();
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>

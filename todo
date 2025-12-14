@@ -4,31 +4,34 @@
     - [X] Search entries
     - [X] Fix the tags. Make it a checkbox
     - [X] Fix Gratitudes being saved wrong
-    - [ ] TTS
-    - [ ] STT
+    - [X] TTS
 
 + Chat
     - [X] Frontend design
-    - [/] REST API the python backend
-    - [ ] TTS
-    - [ ] STT
+    - [/] REST API the python backend (Needs tts stt then done)
+    - [ ] TTS   
+    - [ ] STT  
     - [X] Database interaction
-    - [ ] Cognitive Behavioral Therapy trained LLM
+    - [X] Cognitive Behavioral Therapy trained LLM
 
 + Analytics
-    - [ ] Basic analytics dashboard
-    - [ ] Database interaction
-    - [ ] Recommendation system
+    - [X] Basic analytics dashboard layout
+    - [X] Emotion trends over time 
+    - [X] Journal usage statistics
+    - [X] Chat usage statistics
+    - [X] Database interaction
+    - [ ] Recommendation system and section
+    - [ ] Add counts to tag usage
+    - [ ] Remove the time filter in top right or make functional
 
 + Emotion Detection
     - [X] Sentiement analysis from journal entries
-    - [ ] Sentiment analysis chat messages
+    - [X] Sentiment analysis chat messages
     - [ ] Emotion detection from voice: Chat
-    - [ ] Emotion detection from voice: Journal
-    - [ ] Emotion detection from images
+    - [X] Emotion detection from images
 
 + Sign Up Page
     - [X] Frontend design 
     - [X] Backend integration
     - [X] Database interaction
-    - [ ] Face detection 2 factor authentication
+    - [/] Face detection 2 factor authentication (still needs fine tuning but base is there)
