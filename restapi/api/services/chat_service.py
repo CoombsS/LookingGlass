@@ -91,7 +91,7 @@ def send_message():
         data = request.json
         uid = data.get('uid')
         user_message = data.get('message', '').strip()
-        facial_emotion_data = data.get('facialEmotion')  # NOT CURRENTLY IMMPLEMENTED, FOR FACIAL EMOTION
+        facial_emotion_data = data.get('facialEmotion')  # Facial emotion captured from webcam
         
         if not uid or not user_message: 
             return jsonify({"success": False, "error": "Missing uid or message"}), 400 
@@ -121,8 +121,13 @@ def send_message():
         #Sentiment from msg
         chat_emotion_data = analyze_message_sentiment(user_message)
         
+        print(f"[DEBUG] Chat emotion: {chat_emotion_data}")
+        print(f"[DEBUG] Facial emotion received: {facial_emotion_data}")
+        
         #Determine dominant emotion
         dominant_emotion = determine_dominant_emotion(chat_emotion_data, facial_emotion_data)
+        
+        print(f"[DEBUG] Dominant emotion: {dominant_emotion}")
         
         #Prepare JSON strings for DB 
         chat_emotion_json = json.dumps(chat_emotion_data)
@@ -130,6 +135,8 @@ def send_message():
             facial_emotion_json = json.dumps(facial_emotion_data)
         else:
             facial_emotion_json = None
+        
+        print(f"[DEBUG] Saving to DB - chatEmotion: {chat_emotion_json}, facialEmotion: {facial_emotion_json}")
         
         #Save user message w/ sentiment data
         cursor.execute("""

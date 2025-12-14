@@ -114,9 +114,19 @@ public class RegisterServlet extends HttpServlet {
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
 
-        String jsonPayload = String.format("{\"username\":\"%s\",\"face_data\":\"%s\"}", 
+        // Check if faceData is a JSON array or a single string
+        String faceDataJson;
+        if (faceData.trim().startsWith("[")) {
+            // Already a JSON array (3 faces)
+            faceDataJson = faceData;
+        } else {
+            // Single face string, wrap in quotes
+            faceDataJson = "\"" + faceData.replace("\"", "\\\"") + "\"";
+        }
+        
+        String jsonPayload = String.format("{\"username\":\"%s\",\"face_data\":%s}", 
             username.replace("\"", "\\\""), 
-            faceData.replace("\"", "\\\""));
+            faceDataJson);
 
         try (OutputStream os = conn.getOutputStream()) {
             byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);

@@ -132,31 +132,112 @@ def capture_face():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Get emotion from face during chat
+@app.route("/analyze-emotion", methods=["POST"])
+def analyze_emotion():
+    try:
+        cam = cv2.VideoCapture(0)
+        if not cam.isOpened():
+            return jsonify({"error": "Unable to access webcam"}), 500
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        detected_face = None
+        max_attempts = 100 # Try for about 3 seconds at 30fps
+        
+        for attempt in range(max_attempts):
+            ret, frame = cam.read()
+            if not ret:
+                continue
+                
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(
+                gray, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30)
+            )
+            
+            if len(faces) > 0:
+                x, y, w, h = faces[0]
+                detected_face = frame[y:y+h, x:x+w]
+                break
 
-#learning face for user; expects username and face_data then stores in db
+        cam.release()
+
+        if detected_face is None:
+            return jsonify({"error": "No face detected"}), 400
+
+        # Save face temporarily
+        temp_path = os.path.join(TEMP_FACES_DIR, "temp_emotion.jpg")
+        cv2.imwrite(temp_path, detected_face)
+        
+        # Analyze emotion via DeepFace
+        analysis = DeepFace.analyze(
+            img_path=temp_path,
+            actions=['emotion'],
+            enforce_detection=False,
+            detector_backend='skip'
+        )
+        if os.path.exists(temp_path):
+            os.remove(temp_path)  
+        
+        if analysis and len(analysis) > 0:
+            emotion_data = analysis[0]['emotion']
+            dominant_emotion = analysis[0]['dominant_emotion']
+            
+            # Convert numpy types to Python native types for JSON serialization
+            emotion_data_serializable = {k: float(v) for k, v in emotion_data.items()}
+            confidence = float(emotion_data[dominant_emotion])
+            
+            print(f"[DEBUG] Emotion analysis - Dominant: {dominant_emotion}, Confidence: {confidence:.2f}%")
+            print(f"[DEBUG] All emotions: {emotion_data_serializable}")
+            
+            return jsonify({
+                "success": True,
+                "emotion": dominant_emotion,
+                "confidence": confidence / 100.0,  # Normalize to 0-1
+                "all_emotions": emotion_data_serializable
+            }), 200
+        else:
+            return jsonify({"error": "Failed to analyze emotion"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/learn-face", methods=["POST"])
 def learn_face():
     try:
         data = request.get_json()
         username = data.get("username")
-        face_base64 = data.get("face_data")
+        face_data_input = data.get("face_data")
 
-        if not username or not face_base64:
+        if not username or not face_data_input:
             return jsonify({"error": "Missing username or face_data"}), 400
 
-        # Decode base64 image
-        face_bytes = base64.b64decode(face_base64)
-        nparr = np.frombuffer(face_bytes, np.uint8)
-        face_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Handle both single face and array of faces
+        if isinstance(face_data_input, str):
+            face_data_list = [face_data_input]
+        elif isinstance(face_data_input, list):
+            face_data_list = face_data_input
+        else:
+            return jsonify({"error": "Invalid face_data format"}), 400
 
-        # Generate face embedding
-        embedding = get_face_embedding(face_img)
-        if embedding is None:
-            return jsonify({"error": "Failed to generate face embedding"}), 500
+        embeddings = []
         
-        print(f"[DEBUG] Generated embedding for {username}, length: {len(embedding)}")
+        # Generate embeddings for each face
+        for idx, face_base64 in enumerate(face_data_list):
+            face_bytes = base64.b64decode(face_base64)
+            nparr = np.frombuffer(face_bytes, np.uint8)
+            face_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        # Store embedding in database
+            # Generate face embedding
+            embedding = get_face_embedding(face_img)
+            if embedding is None:
+                return jsonify({"error": f"Failed to generate face embedding for capture {idx + 1}"}), 500
+            
+            embeddings.append(embedding)
+            print(f"[DEBUG] Generated embedding {idx + 1}/{len(face_data_list)} for {username}, length: {len(embedding)}")
+
+        # Store all embeddings in database as JSON array
         connection = get_db_connection()
         if not connection:
             return jsonify({"error": "Database connection failed"}), 500
@@ -164,9 +245,9 @@ def learn_face():
         try:
             cursor = connection.cursor()
             
-            # Convert embedding to json for storage
-            embedding_json = json.dumps(embedding)
-            embedding_bytes = embedding_json.encode('utf-8')
+            # Convert embeddings array to json for storage
+            embeddings_json = json.dumps(embeddings)
+            embeddings_bytes = embeddings_json.encode('utf-8')
             
             # Update the faceData column for this user
             update_query = """
@@ -174,7 +255,7 @@ def learn_face():
                 SET faceData = %s 
                 WHERE username = %s
             """
-            cursor.execute(update_query, (embedding_bytes, username))
+            cursor.execute(update_query, (embeddings_bytes, username))
             connection.commit()
             
             rows_affected = cursor.rowcount
@@ -187,7 +268,7 @@ def learn_face():
             return jsonify({
                 "success": True,
                 "message": f"Face learned for user {username}",
-                "face_count": 1
+                "face_count": len(embeddings)
             }), 200
 
         except Error as e:
@@ -249,28 +330,46 @@ def verify_face():
             captured_embedding_np = np.array(captured_embedding)
             captured_norm = captured_embedding_np / np.linalg.norm(captured_embedding_np)
             
-            print(f"[DEBUG] Comparing against {len(results)} stored faces")
+            print(f"[DEBUG] Comparing against {len(results)} users")
             print(f"[DEBUG] Captured embedding length: {len(captured_embedding)}")
             
             for username, face_data_blob in results:
                 embedding_json = face_data_blob.decode('utf-8')
-                stored_embedding = json.loads(embedding_json)
-                stored_embedding_np = np.array(stored_embedding)
+                stored_data = json.loads(embedding_json)
                 
-                print(f"[DEBUG] Stored embedding for {username} length: {len(stored_embedding)}")
+                # Handle both single embedding and array of embeddings
+                if isinstance(stored_data[0], list):
+                    # Multiple embeddings (new format with 3 faces)
+                    stored_embeddings = stored_data
+                    print(f"[DEBUG] User {username} has {len(stored_embeddings)} stored face embeddings")
+                else:
+                    # Single embedding (old format or 1 face)
+                    stored_embeddings = [stored_data]
+                    print(f"[DEBUG] User {username} has 1 stored face embedding")
                 
-                #cosine similarity (higher = more similar)
-                stored_norm = stored_embedding_np / np.linalg.norm(stored_embedding_np)
-                cosine_sim = np.dot(captured_norm, stored_norm)
+                # Compare against all stored embeddings and take the best match
+                max_similarity_for_user = -1
                 
-                #Euclidean distance for reference
-                distance = np.linalg.norm(captured_embedding_np - stored_embedding_np)
+                for idx, stored_embedding in enumerate(stored_embeddings):
+                    stored_embedding_np = np.array(stored_embedding)
+                    
+                    # Calculate cosine similarity (higher = more similar)
+                    stored_norm = stored_embedding_np / np.linalg.norm(stored_embedding_np)
+                    cosine_sim = np.dot(captured_norm, stored_norm)
+                    
+                    # Calculate Euclidean distance for reference
+                    distance = np.linalg.norm(captured_embedding_np - stored_embedding_np)
+                    
+                    print(f"[DEBUG] {username} face {idx + 1}/{len(stored_embeddings)}: Similarity: {cosine_sim:.4f}, Distance: {distance:.4f}")
+                    
+                    if cosine_sim > max_similarity_for_user:
+                        max_similarity_for_user = cosine_sim
                 
-                print(f"[DEBUG] {username}: Cosine similarity: {cosine_sim:.4f}, Euclidean distance: {distance:.4f}")
+                print(f"[DEBUG] {username} best match: {max_similarity_for_user:.4f}")
                 
-                # Track best match based on cosine similarity
-                if cosine_sim > best_match_similarity:
-                    best_match_similarity = cosine_sim
+                # Track best match across all users
+                if max_similarity_for_user > best_match_similarity:
+                    best_match_similarity = max_similarity_for_user
                     best_match_username = username
 
             # Check threshold 
