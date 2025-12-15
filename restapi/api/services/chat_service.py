@@ -7,6 +7,8 @@ import requests
 from datetime import datetime
 import json
 
+from restapi.api.services.stt_tts_service import *
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -91,10 +93,17 @@ def send_message():
         data = request.json
         uid = data.get('uid')
         user_message = data.get('message', '').strip()
+        user_audio_base64 = data.get('audio_base64')
         facial_emotion_data = data.get('facialEmotion')  # Facial emotion captured from webcam
         
-        if not uid or not user_message: 
-            return jsonify({"success": False, "error": "Missing uid or message"}), 400 
+        if not uid:
+            return jsonify({"success": False, "error": "Missing uid"}), 400
+        if not user_message:
+            temp_wav = decode_base64_to_wav(user_audio_base64)
+            user_message = transcribe_audio_with_whisper(temp_wav, OPENAI_API_KEY)
+            if not user_message:
+                return jsonify({"success": False, "error": "Missing message"}), 400
+
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
@@ -174,6 +183,8 @@ def send_message():
         
         cursor.close()
         conn.close()
+
+        ai_response_base64 = text_to_speech_base64(ai_response, OPENAI_API_KEY, "alloy")
         
         return jsonify({
             "success": True,
@@ -191,6 +202,7 @@ def send_message():
                 "messageID": ai_msg_id,
                 "role": "assistant",
                 "content": ai_response,
+                "content_audio_base64": ai_response_base64,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
         })
@@ -198,6 +210,9 @@ def send_message():
     except Exception as e:
         print(f"Error in send_message: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+    finally:
+        os.remove(temp_wav) # remove temp audio file
 
 @app.route('/chat/history/<int:uid>', methods=['GET'])
 def get_chat_history(uid):
