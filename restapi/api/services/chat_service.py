@@ -7,7 +7,7 @@ import requests
 from datetime import datetime
 import json
 
-from restapi.api.services.stt_tts_service import *
+from stt_tts_service import *
 
 load_dotenv()
 
@@ -89,6 +89,7 @@ def determine_dominant_emotion(chat_emotion, facial_emotion):
 
 @app.route('/chat/send', methods=['POST'])
 def send_message():
+    temp_wav = None  # Added to avoid error
     try:
         data = request.json
         uid = data.get('uid')
@@ -212,7 +213,9 @@ def send_message():
         return jsonify({"success": False, "error": str(e)}), 500
 
     finally:
-        os.remove(temp_wav) # remove temp audio file
+        # Remove file if one was made, changed from os.remove(temp_wave) because it crashed even when no audio was used
+        if temp_wav and os.path.exists(temp_wav):
+            os.remove(temp_wav)
 
 @app.route('/chat/history/<int:uid>', methods=['GET'])
 def get_chat_history(uid):

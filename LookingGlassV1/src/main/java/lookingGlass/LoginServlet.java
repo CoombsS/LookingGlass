@@ -62,10 +62,10 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("uid", dbUid);      
             session.setAttribute("username", dbUser); 
             
-            // Get the originally requested URL from the session, default to journal.jsp if none
+            // Get the originally requested URL from the session, default to analytics.jsp if none
             String requestedUrl = (String) session.getAttribute("requested_url");
             if (requestedUrl == null) {
-                requestedUrl = req.getContextPath() + "/journal.jsp";
+                requestedUrl = req.getContextPath() + "/analytics.jsp";
             }
             session.removeAttribute("requested_url"); // Clear it after use
             
