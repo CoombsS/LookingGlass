@@ -16,35 +16,22 @@
   <title>Looking Glass — Analytics</title>
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/analytics.css">
-</head>
-<body class="grid-analytics">
-  <% request.setCharacterEncoding("UTF-8"); %>
-  <%@ include file="/WEB-INF/drawer.jspf" %>
-
-  <c:set var="uid" value="${sessionScope.uid}" />
-  <c:if test="${empty uid}">
-    <c:redirect url="/login.jsp" />
-  </c:if>
-
-  <% 
-    String uidValue = "";
-    if (session != null && session.getAttribute("uid") != null) {
-      uidValue = session.getAttribute("uid").toString();
-    }
-  %>
-  <input type="hidden" id="uid" value='<%= uidValue %>' />
-
   <script>
     const ANALYTICS_API = 'http://127.0.0.1:5003/analytics';
-    const uidInput = document.getElementById('uid');
-    const userUid = uidInput ? uidInput.value : null;
-
-    if (!userUid) {
-      window.location.href = 'login.jsp';
+    
+    function getUserUid() {
+      const uidInput = document.getElementById('uid');
+      return uidInput ? uidInput.value : null;
     }
 
     // Fetch all analytics data
     async function loadAnalyticsData() {
+      const userUid = getUserUid();
+      if (!userUid) {
+        window.location.href = 'login.jsp';
+        return;
+      }
+      
       try {
         const [chatEmotionData, journalSentimentData, journalData, chatData, activityData, tagsData, patternsData, trendsData] = await Promise.all([
           fetch(ANALYTICS_API + '/emotion-distribution/' + userUid).then(r => r.json()),
@@ -510,6 +497,23 @@
     // Load all data when page loads
     document.addEventListener('DOMContentLoaded', loadAnalyticsData);
   </script>
+</head>
+<body class="grid-analytics">
+  <% request.setCharacterEncoding("UTF-8"); %>
+  <%@ include file="/WEB-INF/drawer.jspf" %>
+
+  <c:set var="uid" value="${sessionScope.uid}" />
+  <c:if test="${empty uid}">
+    <c:redirect url="/login.jsp" />
+  </c:if>
+
+  <% 
+    String uidValue = "";
+    if (session != null && session.getAttribute("uid") != null) {
+      uidValue = session.getAttribute("uid").toString();
+    }
+  %>
+  <input type="hidden" id="uid" value='<%= uidValue %>' />
 
   <!-- Sidebar -->
   <aside class="sidebar">
@@ -546,17 +550,7 @@
 
   <!-- Header -->
   <header class="header">
-    <div class="controls">
-      <h2 class="page-title">Analytics Dashboard</h2>
-    </div>
-    <div class="controls">
-      <select id="timeRange" class="input-sm">
-        <option value="7">Last 7 days</option>
-        <option value="30" selected>Last 30 days</option>
-        <option value="90">Last 90 days</option>
-        <option value="365">Last year</option>
-      </select>
-    </div>
+    <h2 class="page-title">Analytics Dashboard</h2>
   </header>
 
   <!-- Main Content -->
@@ -773,17 +767,96 @@
     </section>
 
 
-     <!-- Recommended Resources Section TO BE FINISHED-->
-      <section id="Resources" class = "resources-section">
-        <h2 class ="section-title">Recommended Resources</h2>
+     <!-- Recommended Resources Section -->
+      <section id="resources" class="analytics-section">
+        <h2 class="section-title">Recommended Resources</h2>
         <div class="resources-grid">
+          
+          <!--Hotlines -->
+          <div class="resource-card">
+            <h3>Crisis Hotlines</h3>
+            <div class="resource-list">
+              <div class="resource-item">
+                <strong>988 Suicide and Crisis Lifeline</strong>
+                <p>Call or text 988 | Available 24/7</p>
+                <a href="https://988lifeline.org/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>Crisis Text Line</strong>
+                <p>Text HOME to 741741 | Available 24/7</p>
+                <a href="https://www.crisistextline.org/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>SAMHSA National Helpline</strong>
+                <p>Call 1-800-662-4357 | Available 24/7</p>
+                <a href="https://www.samhsa.gov/find-help/national-helpline" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+            </div>
+          </div>
 
+          <!-- Mental Health Support -->
+          <div class="resource-card">
+            <h3>Mental Health Support</h3>
+            <div class="resource-list">
+              <div class="resource-item">
+                <strong>NAMI HelpLine</strong>
+                <p>Call 1-800-950-6264 | Mon-Fri 10am-10pm ET</p>
+                <a href="https://www.nami.org/help" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>MentalHealth.gov</strong>
+                <p>Resources, treatment near you, and education</p>
+                <a href="https://www.mentalhealth.gov/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>Psychology Today Therapist Finder</strong>
+                <p>Find therapists nearby</p>
+                <a href="https://www.psychologytoday.com/us/therapists" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Specific Support -->
+          <div class="resource-card">
+            <h3>Specialized Support</h3>
+            <div class="resource-list">
+              <div class="resource-item">
+                <strong>Anxiety & Depression Association</strong>
+                <p>Resources and support groups</p>
+                <a href="https://adaa.org/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>Veterans Crisis Line</strong>
+                <p>Call 988 | Available 24/7</p>
+                <a href="https://www.veteranscrisisline.net/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Self-Care Resources -->
+          <div class="resource-card">
+            <h3>Self-Care & Wellness</h3>
+            <div class="resource-list">
+              <div class="resource-item">
+                <strong>Headspace (Meditation)</strong>
+                <p>Guided meditation</p>
+                <a href="https://www.headspace.com/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>Calm (Sleep & Meditation)</strong>
+                <p>Aids in sleep, meditation, and relaxation</p>
+                <a href="https://www.calm.com/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+              <div class="resource-item">
+                <strong>7 Cups (Peer Support)</strong>
+                <p>Free emotional support chat</p>
+                <a href="https://www.7cups.com/" target="_blank" class="resource-link">Visit Website</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </section>
-
-
-
-
-
 
   </main>
 
@@ -895,12 +968,6 @@
             this.classList.add('active');
           }
         });
-      });
-
-      // Time range selector (placeholder for future implementation)
-      document.getElementById('timeRange').addEventListener('change', function() {
-        console.log('Time range changed to:', this.value, 'days');
-        // Future: Implement AJAX call to reload data with new time range
       });
 
       // Add animation on scroll
